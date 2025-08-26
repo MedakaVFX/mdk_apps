@@ -3,24 +3,18 @@
 * VFX用 APP互換 Pythonパッケージ
 
 Info:
-    * Created : v0.0.1 2024-11-01 Tatsuya YAMAGISHI
+    * Created : v0.1.0 2025-08-12 Tatsuya YAMAGISHI
     * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
-    * v0.0.3 2025-02-04 Tatsuya Yamagishi
-        * fixed : import mdk_b3d
-        * updated : mdk_maya
-        
-    * v0.0.2 2025-02-03 Tatsuya Yamagishi
-        * updated : mdk_maya 
-
-    * v0.0.1 2025-01-03 Tatsuya Yamagishi
-        * New
+    * v0.1.0 2025-08-12 Tatsuya Yamagishi
+        * Changed : メジャーアップデート
+            * 関数メインの構成に変更
 """
 
-VERSION = 'v0.0.3'
-NAME = 'mdkapps'
+VERSION = 'v0.1.0'
+NAME = 'mdk_apps'
 
 import os
 import sys
@@ -31,7 +25,6 @@ if os.environ.get('MDK_DEBUG'):
     print('MDK | [ import mdkapps package]')
     print(f'MDK | {NAME} {VERSION}')
     print('MDK | ---------------------------')
-
 
 
 try:
