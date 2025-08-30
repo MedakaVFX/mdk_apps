@@ -87,6 +87,51 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
     raise RuntimeError('未実装')
 
 
+def get_ext() -> str:
+    return '.b3d'
+
+
+@context_window
+def import_usd(filepath: str, scale: float = 0.01):
+    """ USDファイルをインポート
+
+    Reference from:
+
+    * https://devtalk.blender.org/t/issue-with-importing-usd-files-via-bpy-ops-wm-usd-import-and-python/26152
+
+    bpy.ops.wm.usd_import(
+        filepath=self.file_path, 
+        import_cameras=True, 
+        import_curves=True, 
+        import_lights=True, 
+        import_materials=True, 
+        import_meshes=True, 
+        import_volumes=True, 
+        scale=1.0, 
+        read_mesh_uvs=True, 
+        read_mesh_colors=False, 
+        import_subdiv=False, 
+        import_instance_proxies=True, 
+        import_visible_only=True,
+        import_guide=False,
+        import_proxy=True,
+        import_render=True,
+        set_frame_range=True,
+        relative_path=True,
+        create_collection=False,
+        light_intensity_scale=1.0,
+        mtl_name_collision_mode='MAKE_UNIQUE',
+        import_usd_preview=True,
+        set_material_blend=True)
+    """
+    # _override = get_override_context()
+
+    bpy.ops.wm.usd_import(
+            # _override,
+            filepath=filepath,
+            scale=scale,)
+
+
 def open_dir(filepath):
     """
     フォルダを開く
@@ -107,6 +152,34 @@ def open_dir(filepath):
 
         else:
             subprocess.Popen(["xdg-open", _filepath])
+
+
+@context_window
+def save_file(filepath, context=False):
+    """ ファイルを保存
+    Args:
+        filepath (str): 保存するファイルパス
+        context (bool): コンテキストを使用するかどうか
+    """
+    if context:
+        _override = bpy.context.copy()
+        _override['blend_data'] = bpy.data
+
+        bpy.ops.wm.save_as_mainfile(_override, filepath=filepath)
+
+    else:
+        bpy.ops.wm.save_as_mainfile(filepath=filepath)
+
+
+
+@context_window
+def set_current_time(value: int):
+    """ 現在のフレームをセット
+    Args:
+        value (int): フレーム番号
+    """
+    # print(f'MDK | current_time = {value}')
+    bpy.context.scene.frame_current = int(value)
 
 
 @context_window
@@ -131,8 +204,10 @@ def set_frame_range(start: int, end: int) -> None:
     bpy.context.scene.frame_start = int(start)
     bpy.context.scene.frame_end = int(end)
 
-    bpy.context.scene.frame_preview_start = 10
-    bpy.context.scene.frame_preview_end = 100
+    # bpy.context.scene.frame_preview_start = 10
+    # bpy.context.scene.frame_preview_end = 100
+
+    # bpy.ops.action.view_all()
 
 
 def set_render_frame_range(first: int, last: int):
