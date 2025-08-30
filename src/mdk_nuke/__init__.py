@@ -90,6 +90,15 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
 
 #     # return QtWidgets.QApplication.activeWindow()
 
+def get_ext() -> str:
+    """ 拡張子を取得 
+    
+    Returns:
+        str: 拡張子
+    """
+    return '.nk'
+
+
 def get_main_window():
     app = QtWidgets.QApplication.instance()
     for widget in app.topLevelWidgets():
@@ -144,6 +153,19 @@ def open_in_explorer(filepath: str):
         raise FileNotFoundError(f'File is not found.')
 
 
+def save_file(filepath):
+    """ ファイル保存 """
+    nuke.scriptSaveAs(filepath, -1)
+
+
+def set_current_time(value: int):
+    """ 現在の時間を設定
+    Args:
+        value (int): フレーム番号
+    """
+    nuke.frame(value)
+
+
 def set_fps(value: float):
     """ Plugin Builtin Function
     * フレームレートを設定
@@ -151,7 +173,7 @@ def set_fps(value: float):
     nuke.root()['fps'].setValue(float(value))
 
 
-def set_framerange(first: int, last: int):
+def set_frame_range(first: int, last: int):
     """ Plugin Builtin Function
     * フレームレンジを設定
 

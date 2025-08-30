@@ -60,6 +60,10 @@ def get_ext() -> str:
     return '.dat'
 
 
+def get_main_window() -> None:
+    return None
+
+
 def save_file(filepath: str, value: str) -> None:
     """ ファイルを保存 """
     with open(filepath, 'w') as f:
