@@ -60,8 +60,45 @@ def get_ext() -> str:
     return '.dat'
 
 
+def get_ext_list() -> list[str]:
+    """ 拡張子リストを取得 """
+    return list(EXT_LIST)
+
+
 def get_main_window() -> None:
     return None
+
+def import_file(filepath: str) -> str | None:
+    """ ファイルをインポート
+    
+    Args:
+        filepath (str): ファイルパス
+    """
+    print(f'MDK | import = {filepath}')
+    return filepath
+
+def import_usd(filepath: str):
+    print(f'MDK | USD | import = {filepath}')
+
+
+def open_file(filepath: str):
+    """ ファイルを開く 
+    
+    Args:
+        filepath (str): ファイルパス
+    """
+    if os.path.isfile(filepath):
+        if platform.system() == 'Windows':
+            cmd = 'explorer {}'.format(filepath.replace('/', '\\'))
+            subprocess.Popen(cmd)
+        
+        elif platform.system() == 'Darwin':
+            subprocess.call(['open', filepath])
+        
+        else:
+            subprocess.Popen(["xdg-open", filepath])
+    else:
+        raise TypeError('"filepath" is not file.')
 
 
 def save_file(filepath: str, value: str) -> None:
@@ -218,8 +255,7 @@ def set_unit(value: str):
 #         for _filepath in filepath_list:
 #             self.import_file(_filepath)
 
-#     def import_usd(self, filepath: str):
-#         print(f'MDK | USD | import = {filepath}')
+
 
 
 #     def open_file(self, filepath: str):

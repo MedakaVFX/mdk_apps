@@ -99,6 +99,21 @@ def get_ext() -> str:
     return '.nk'
 
 
+def get_filepath() -> str | None:
+    """現在開いているファイルパスを取得 
+    
+    Returns:
+        str | None: ファイルパス、ファイルが保存されていない場合はNone
+    """
+    
+    _result = nuke.root().name()
+    
+    if _result == 'Root':
+       return None
+
+    return _result
+
+
 def get_main_window():
     app = QtWidgets.QApplication.instance()
     for widget in app.topLevelWidgets():
