@@ -38,6 +38,7 @@ if os.environ.get('MDK_DEBUG'):
 # Settings
 #=======================================#
 FILE_FILTER_USD = re.compile(r'.+\.(usd|usdc|usda)')
+FILE_FILTER_IMAGE = re.compile(r'.+\.(png|jpeg|jpg|tif|tiff|exr|tx|hdr)')
 
 EXT_LIST = [
     '.b3d',
@@ -72,9 +73,38 @@ def context_window(func):
 
     return wrapper
 
+
 # ======================================= #
 # Functions
 # ======================================= #
+
+@context_window
+def create_image_plane(filepath: str) -> bpy.types.Object:
+    """Import a texture file into Blender.
+
+    Reference From: Chat GPT-4
+
+    Args:
+        filepath (str): The path to the texture file.
+
+    Returns:
+        bpy.types.Object: The created image plane object.
+    """
+
+    # 画像データを読み込み
+    _img = bpy.data.images.load(filepath)
+
+    # Empty（Imageタイプ）を追加
+    bpy.ops.object.empty_add(type='IMAGE', location=(0, 0, 0))
+    _ref_obj = bpy.context.active_object
+    _ref_obj.data = _img   # 読み込んだ画像をセット
+
+    # 名前をつける
+    _ref_obj.name = pathlib.Path(filepath).stem
+
+    return _ref_obj
+
+
 def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=None, filetype='jpg'):
     """ プレイブラストを作成
     
@@ -88,7 +118,66 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
 
 
 def get_ext() -> str:
-    return '.b3d'
+    return '.blend'
+
+
+@context_window
+def get_filepath() -> str:
+    """ 現在開いているファイルパスを取得 """
+    return bpy.context.blend_data.filepath
+
+
+def get_main_window():
+    """ MainWindowを取得 """
+    # for _window in bpy.context.window_manager.windows:
+    #     if _window.screen.name == 'Layout':
+    #         return _window
+    return None
+
+
+
+def import_file(value: str) -> None:
+    """
+    ファイルをインポート
+
+    Args:
+        value (str): ファイルパス
+
+    """
+    if is_image(value):
+        import_image(value)    
+    elif is_usd(value):
+        import_usd(value)
+    elif is_abc(value):
+        import_abc(value)
+    else:
+        raise ValueError('File is not supported.')
+
+@context_window
+def import_image(filepath: str):
+    """ 画像をインポート 
+    Args:
+        filepath (str): 画像ファイルパス
+    """
+    _obj = bpy.context.active_object
+    _active_index = _obj.active_material_index
+
+    _mat = bpy.context.active_object.material_slots[_active_index].material
+    _img = bpy.data.images.load(filepath)
+
+
+    _mat.use_nodes=True 
+
+    #setup the node_tree and links as you would manually on shader Editor
+    #to define an image texture for a material
+
+    _material_output = _mat.node_tree.nodes.get('Material Output')
+    _principled_BSDF = _mat.node_tree.nodes.get('Principled BSDF')
+
+    _tex_node = _mat.node_tree.nodes.new('ShaderNodeTexImage')
+    _tex_node.image = _img
+
+    # _mat.node_tree.links.new(_tex_node.outputs['Color'], _principled_BSDF.inputs['Base Color'])
 
 
 @context_window
@@ -130,6 +219,16 @@ def import_usd(filepath: str, scale: float = 0.01):
             # _override,
             filepath=filepath,
             scale=scale,)
+
+def is_image(filepath: str) -> tuple:
+    """ 画像ファイル判定 """
+    return FILE_FILTER_IMAGE.match(filepath)
+
+
+def is_usd(filepath: str) -> tuple:
+    """ USDファイル判定 """
+    return FILE_FILTER_USD.match(filepath)
+
 
 
 def open_dir(filepath):
