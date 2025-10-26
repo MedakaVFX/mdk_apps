@@ -59,46 +59,13 @@ def get_ext() -> str:
     """ 拡張子を取得 """
     return '.dat'
 
+def get_script_exts() -> list:
+    """ スクリプト拡張子リストを取得 """
+    return ['.py']
 
-def get_ext_list() -> list[str]:
-    """ 拡張子リストを取得 """
-    return list(EXT_LIST)
-
-
-def get_main_window() -> None:
-    return None
-
-def import_file(filepath: str) -> str | None:
-    """ ファイルをインポート
-    
-    Args:
-        filepath (str): ファイルパス
-    """
-    print(f'MDK | import = {filepath}')
-    return filepath
-
-def import_usd(filepath: str):
-    print(f'MDK | USD | import = {filepath}')
-
-
-def open_file(filepath: str):
-    """ ファイルを開く 
-    
-    Args:
-        filepath (str): ファイルパス
-    """
-    if os.path.isfile(filepath):
-        if platform.system() == 'Windows':
-            cmd = 'explorer {}'.format(filepath.replace('/', '\\'))
-            subprocess.Popen(cmd)
-        
-        elif platform.system() == 'Darwin':
-            subprocess.call(['open', filepath])
-        
-        else:
-            subprocess.Popen(["xdg-open", filepath])
-    else:
-        raise TypeError('"filepath" is not file.')
+def get_selected_nodes() -> list[str]:
+    """ 選択しているノードを取得 """
+    return ['root', 'root/geo']
 
 
 def save_file(filepath: str, value: str) -> None:
@@ -106,10 +73,16 @@ def save_file(filepath: str, value: str) -> None:
     with open(filepath, 'w') as f:
         f.write(value)
 
+def save_selection(filepath: str):
+    """ 選択を保存 """
+    _nodes = get_selected_nodes()
+
+    _filepath = pathlib.Path(filepath)
+    _filepath.write_text(str(_nodes), encoding='utf8')
+
 
 def set_fps(value: str):
     print(f'MDK | fps = {value}')
-
 
 def set_frame_range(value: tuple):
     """ フレームレンジをセット """
@@ -188,9 +161,7 @@ def set_unit(value: str):
 #         """ レンダーサイズを取得 """
 #         return (1920, 1080)
 
-#     def get_selected_nodes(self) -> list[str]:
-#         """ 選択しているノードを取得 """
-#         return ['root', 'root/geo']
+
     
 #     def set_aperture_size(self, values: tuple[int]):
 #         print(f'MDK | aperture_size = {values}')
@@ -255,7 +226,8 @@ def set_unit(value: str):
 #         for _filepath in filepath_list:
 #             self.import_file(_filepath)
 
-
+#     def import_usd(self, filepath: str):
+#         print(f'MDK | USD | import = {filepath}')
 
 
 #     def open_file(self, filepath: str):
@@ -297,9 +269,4 @@ def set_unit(value: str):
 #         _filepath.write_text('Medaka', encoding='utf8')
 
 
-#     def save_selection(self, filepath: str):
-#         """ 選択を保存 """
-#         _nodes = self.get_selected_nodes()
 
-#         _filepath = pathlib.Path(filepath)
-#         _filepath.write_text(str(_nodes), encoding='utf8')

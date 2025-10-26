@@ -3,16 +3,29 @@
 * VFX用Pythonパッケージ
 
 Info:
-    * Created : 2025-09-30 Tatsuya YAMAGISHI
-    * Coding : Python 3.11.9 & PySide6
+    * Created : v0.0.1 2024-11-15 Tatsuya YAMAGISHI
+    * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
 
     
 Release Note:
-    * v0.0.1 [v0.0.1] 2025-10-01 Tatsuya Yamagishi
+    * v0.0.3 [v0.0.3] 2025-10-21 Tatsuya Yamagishi
+        * added: apply_alembic_cache()
+        * added: set_aperture_size()
+        * added: set_unit()
+        * Added: get_main_window()
+
+        
+    * v0.0.2 (v0.0.2) 2025-02-03 Tatsuya Yamagishi
+        * fixed : export_nodes()
+        * upateed : ファイル判定関数
+
+        
+    * v0.0.1 (v0.0.1) 2025-01-31 Tatsuya Yamagishi
+
 """
 
-VERSION = 'v0.0.1'
+VERSION = 'v0.0.3'
 NAME = 'mdk_maya'
 
 #=======================================#
@@ -30,6 +43,7 @@ import sys
 #=======================================#
 import maya.cmds as cmds
 import maya.mel as mel
+from maya import OpenMayaUI as omui
 
 from maya.app.renderSetup.model import selector
 from maya.app.renderSetup.model import renderLayer
@@ -48,7 +62,7 @@ try:
 except:
     from qtpy import QtCore, QtGui, QtWidgets
 
-from maya import OpenMayaUI as omui 
+
 
 try:
     from shiboken2 import wrapInstance
@@ -101,6 +115,7 @@ FILE_FILTER_RAW = re.compile(r'.+\.(cr2|cr3|dng|CR2|CR3|DNG)')
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 FILE_FILTER_TEXT = re.compile(r'.+\.(doc|txt|text|json|py|usda|nk|sh|zsh|bat)')
 
+SCRIPT_EXT_LIST = ['.py', '.mel', '.bat', '.sh', '.zsh']
 
 #=======================================#
 # Functions
@@ -117,13 +132,13 @@ def add_recent_file(filepath: str):
         cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
         mel.eval(cmd)
 
-        
+
 def create_playblast(
             filepath: str,
             size: list|tuple=None,
             range: list|tuple=None,
-            filetype='jpg'):
-    
+            filetype='jpg'
+):
     """ プレイブラストを作成
     
     Args:
@@ -158,13 +173,10 @@ def exec_script(filepath):
     if FILE_FILTER_SCRIPT.match(filepath):
         if filepath.lower().endswith('.py'):
             exec_python_file(filepath, globals())
-    else:
-        raise TypeError()
-
-def get_ext() -> str:
-    """ 拡張子を取得 """
-    return '.ma'
-
+        elif filepath.lower().endswith('.mel'):
+            mel.eval(filepath)
+    
+    
 
 def exec_python_file(filepath, globals=None, locals=None):
     if globals is None:
@@ -176,15 +188,13 @@ def exec_python_file(filepath, globals=None, locals=None):
     with open(filepath, 'rb') as file:
         exec(compile(file.read(), filepath, 'exec'), globals, locals)
 
-
-def get_filepath() -> str:
-    """ 現在開いているファイルパスを取得 
-    Returns:
-        str: ファイルパス
+def get_ext(self) -> str:
+    """ 拡張子を返す 
+    
     """
-    return cmds.file(q=True, sceneName=True)
+    return '.ma'
 
-def get_main_window() -> QtWidgets.QWidget:
+def get_main_window():
     """ Mayaのメインウィンドウを取得 
     
     """
@@ -192,7 +202,22 @@ def get_main_window() -> QtWidgets.QWidget:
 
     if ptr is not None:
         return wrapInstance(int(ptr), QtWidgets.QWidget)
-        
+
+def get_script_exts() -> list:
+    """ スクリプト拡張子リストを取得 """
+    return SCRIPT_EXT_LIST
+
+def get_selected_nodes(long=True) -> list[str]:
+    """ 選択しているノードを返す
+
+    Args:
+        long(bool): True: フルパス, False: ノード名のみ
+    
+    Returns:
+        list[str]: 選択しているノードリスト
+    """
+    return cmds.ls(sl=True, long=long)
+
 
 def import_file(filepath, namespace=None):    
     if os.path.exists(filepath):
@@ -201,7 +226,12 @@ def import_file(filepath, namespace=None):
         if namespace is None:
             if is_usd(filepath):
                 # pm.importFile(filepath, type='USD Import',preserveReferences=True)
-                return cmds.file(filepath, i=True, type='USD Import', preserveReferences=True)
+                return cmds.file(
+                        filepath,
+                        i=True,
+                        type='USD Import',
+                        namespace=namespace,
+                        preserveReferences=True)
             
             elif is_image(filepath):
                 import_texture(filepath)
@@ -226,32 +256,10 @@ def import_file(filepath, namespace=None):
         raise FileNotFoundError()
 
 
-def import_texture(filepath, colorspace=None):
-    node_name = pathlib.Path(filepath).stem
-    file_node = cmds.shadingNode('file', asShader=True)
-    cmds.setAttr(file_node + '.fileTextureName', filepath, type='string')
-
-    place2d_node = cmds.shadingNode('place2dTexture', asUtility=True)
-
-    # Fileノードに2Dプレースメントノードを接続
-    cmds.connectAttr(place2d_node + '.outUV', file_node + '.uvCoord')
-    cmds.connectAttr(place2d_node + '.outUvFilterSize', file_node + '.uvFilterSize')
-
-    if colorspace:
-        cmds.setAttr(f'{file_node}.ignoreColorSpaceFileRules', 1)
-        cmds.setAttr(f'{file_node}.colorSpace', colorspace, type='string')
-
-    return file_node
+def import_usd(filepath: str, namespace: str=None):
+    cmds.file(filepath, i=True, type='USD Import', preserveReferences=True)
 
 
-def is_abc(filepath: str) -> tuple:
-    """ Alembicファイル判定 """
-    return FILE_FILTER_ABC.match(filepath)
-
-def is_fbx(filepath: str) -> tuple:
-    """ Alembicファイル判定 """
-    return FILE_FILTER_FBX.match(filepath)
-    
 def is_image(filepath: str) -> tuple:
     """ イメージファイル判定 """
     return FILE_FILTER_IMAGE.match(filepath)
@@ -260,15 +268,16 @@ def is_maya(filepath: str) -> tuple:
     """ Mayaファイル判定 """
     return FILE_FILTER_MAYA.match(filepath)
 
-def is_obj(filepath: str) -> tuple:
-    """ Objファイル判定 """
-    return FILE_FILTER_OBJ.match(filepath)
-
 def is_usd(filepath: str) -> tuple:
     """ USDファイル判定 """
     return FILE_FILTER_USD.match(filepath)
 
-    
+def open_file(filepath, recent=False):
+    """ Plugin Builtin Function """
+    if recent:
+        add_recent_file(filepath)
+
+    cmds.file(filepath, open=True, force=True)
     
 def open_in_explorer(filepath: str):
     """
@@ -290,47 +299,35 @@ def open_in_explorer(filepath: str):
     else:
         raise FileNotFoundError(f'File is not found.')
 
+def set_framerange(headin: int, cutin: int, cutout: int, tailout: int):
+    cmds.playbackOptions(animationStartTime=headin, animationEndTime=tailout)
+    cmds.playbackOptions(minTime=headin, maxTime=tailout)
+    cmds.currentTime(headin)
 
-def save_file(filepath: str, mkdir=False, recent=False):
-    """ ファイル保存 """
-    if mkdir:
-        _dirpath = os.path.dirname(filepath)
-        if not os.path.exists(_dirpath):
-            os.makedirs(_dirpath)
-
-    if recent:
-        add_recent_file(filepath)
-
-
-    cmds.file(rename=filepath)
-
-    filename, ext = os.path.splitext(filepath)
-    if ext.lower() == '.mb':
-        cmds.file(save=True, type='mayaBinary')
-    elif ext.lower() == '.ma':
-        cmds.file(save=True, type='mayaAscii')
-
-
-
-def set_fps(value: int):
-    """ fpsを設定
+    
+def save_selection(filepath: str):
+    """ 選択を保存
     
     Args:
-        value (int): 設定するfps値
+        filepath (str): 保存するファイルのパス
     """
-    fps_dict = {
-        15: "game",
-        24: "film",
-        25: "pal",
-        30: "ntsc",
-        48: "show",
-        50: "palf",
-        60: "ntscf"
+    filetype_dict = {
+        '.mb': 'mayaBinary',
+        '.ma': 'mayaAscii',
+        '.fbx': 'FBX export',
+        '.obj': 'OBJexport',
     }
 
-    value = int(float(value)+0.5)
+    _nodes = cmds.ls(sl=True)
+    if not _nodes:
+        RuntimeError('Select any node')
 
-    cmds.currentUnit(time=fps_dict[value])
+    _, _ext = os.path.splitext(filepath)
+    _ext = _ext.lower()
+    _filetype = filetype_dict.get(_ext)
+
+    cmds.file(filepath, force=True, type =_filetype, exportSelected=True)
+    
 # ======================================= #
 # Class
 # ======================================= #
@@ -358,20 +355,6 @@ class AppMain:
         print(f'Apply Alembic Cache: {filepath}')
         cmds.AbcImport(filepath, mode="import", connect=_selection[0])
         # cmds.AbcImport(filepath, mode="import", rpr=_selection[0], merge=True)
-
-
-
-    # def add_recent_file(self, filepath: str):
-    #     filepath = filepath.replace('\\','/') 
-    #     _filename, _ext = os.path.splitext(filepath)
-    #     _ext = _ext.lower()
-
-    #     if _ext == '.ma':
-    #         cmd = 'addRecentFile( "{}", "mayaAscii")'.format(filepath)
-    #         mel.eval(cmd)
-    #     elif _ext == '.mb':
-    #         cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
-    #         mel.eval(cmd)
 
 
 
@@ -665,7 +648,10 @@ class AppMain:
         if _filepath:
             return pathlib.Path(_filepath).name
         
+    
 
+    def get_filepath(self) -> str:
+        return cmds.file(q=True, sceneName=True)
     
 
     def get_fps(self) -> int:
@@ -741,49 +727,39 @@ class AppMain:
 
         
 
-    def get_selected_nodes(self, long=True) -> list[str]:
-        """ 選択しているノードを返す
-
-        Args:
-            long(bool): True: フルパス, False: ノード名のみ
-        
-        Returns:
-            list[str]: 選択しているノードリスト
-        """
-        return cmds.ls(sl=True, long=long)
 
 
 
-    # def import_file(self, filepath, namespace=None):    
-    #     if os.path.exists(filepath):
-    #         file, ext = os.path.splitext(filepath)
+    def import_file(self, filepath, namespace=None):    
+        if os.path.exists(filepath):
+            file, ext = os.path.splitext(filepath)
 
-    #         if namespace is None:
-    #             if self.is_usd(filepath):
-    #                 # pm.importFile(filepath, type='USD Import',preserveReferences=True)
-    #                 return cmds.file(filepath, i=True, type='USD Import', preserveReferences=True)
+            if namespace is None:
+                if self.is_usd(filepath):
+                    # pm.importFile(filepath, type='USD Import',preserveReferences=True)
+                    return cmds.file(filepath, i=True, type='USD Import', preserveReferences=True)
                 
-    #             elif self.is_image(filepath):
-    #                 self.import_texture(filepath)
+                elif self.is_image(filepath):
+                    self.import_texture(filepath)
 
-    #             elif self.is_maya(filepath):
-    #                 # pm.importFile(filepath, preserveReferences=True)
-    #                 return cmds.file(filepath, i=True)
-    #             else:
-    #                 raise TypeError('MDK | Not supported file type')
+                elif self.is_maya(filepath):
+                    # pm.importFile(filepath, preserveReferences=True)
+                    return cmds.file(filepath, i=True)
+                else:
+                    raise TypeError('MDK | Not supported file type')
                 
-    #         else:
-    #             currentNs = cmds.namespaceInfo(cur=True)
+            else:
+                currentNs = cmds.namespaceInfo(cur=True)
 
-    #             if not cmds.namespace(ex=':{}'.format(namespace)):
-    #                 cmds.namespace(add=':{}'.format(namespace))
+                if not cmds.namespace(ex=':{}'.format(namespace)):
+                    cmds.namespace(add=':{}'.format(namespace))
 
-    #             cmds.namespace(set=':{}'.format(namespace))
+                cmds.namespace(set=':{}'.format(namespace))
 
-    #             return cmds.file(filepath, i=True, mergeNamespacesOnClash=False, namespace=namespace)
+                return cmds.file(filepath, i=True, mergeNamespacesOnClash=False, namespace=namespace)
                         
-    #     else:
-    #         raise FileNotFoundError()
+        else:
+            raise FileNotFoundError()
         
 
     def import_files(self, filepath_list: list[str], namespace=None):
@@ -791,55 +767,47 @@ class AppMain:
             self.import_file(_filepath, namespace=namespace)
 
 
-    # def import_texture(self, filepath, colorspace=None):
-    #     node_name = pathlib.Path(filepath).stem
-    #     # file_node = cmds.shadingNode('file', asShader=True, name=node_name)
-    #     file_node = cmds.shadingNode('file', asShader=True)
+    def import_texture(self, filepath, colorspace=None):
+        node_name = pathlib.Path(filepath).stem
+        # file_node = cmds.shadingNode('file', asShader=True, name=node_name)
+        file_node = cmds.shadingNode('file', asShader=True)
 
-    #     cmds.setAttr(file_node + '.fileTextureName', filepath, type='string')
+        cmds.setAttr(file_node + '.fileTextureName', filepath, type='string')
 
-    #     # place2d_node = cmds.shadingNode('place2dTexture', asUtility=True, name=place2d_name)
-    #     place2d_node = cmds.shadingNode('place2dTexture', asUtility=True)
+        # place2d_node = cmds.shadingNode('place2dTexture', asUtility=True, name=place2d_name)
+        place2d_node = cmds.shadingNode('place2dTexture', asUtility=True)
 
-    #     # Fileノードに2Dプレースメントノードを接続
-    #     cmds.connectAttr(place2d_node + '.outUV', file_node + '.uvCoord')
-    #     cmds.connectAttr(place2d_node + '.outUvFilterSize', file_node + '.uvFilterSize')
+        # Fileノードに2Dプレースメントノードを接続
+        cmds.connectAttr(place2d_node + '.outUV', file_node + '.uvCoord')
+        cmds.connectAttr(place2d_node + '.outUvFilterSize', file_node + '.uvFilterSize')
 
-    #     if colorspace:
-    #         cmds.setAttr(f'{file_node}.ignoreColorSpaceFileRules', 1)
-    #         cmds.setAttr(f'{file_node}.colorSpace', colorspace, type='string')
+        if colorspace:
+            cmds.setAttr(f'{file_node}.ignoreColorSpaceFileRules', 1)
+            cmds.setAttr(f'{file_node}.colorSpace', colorspace, type='string')
 
-    #     return file_node
+        return file_node
 
 
         
 
-    # def is_abc(self, filepath: str) -> tuple:
-    #     """ Alembicファイル判定 """
-    #     return FILE_FILTER_ABC.match(filepath)
+    def is_abc(self, filepath: str) -> tuple:
+        """ Alembicファイル判定 """
+        return FILE_FILTER_ABC.match(filepath)
         
-    # def is_fbx(self, filepath: str) -> tuple:
-    #     """ Alembicファイル判定 """
-    #     return FILE_FILTER_FBX.match(filepath)
+    def is_fbx(self, filepath: str) -> tuple:
+        """ Alembicファイル判定 """
+        return FILE_FILTER_FBX.match(filepath)
         
 
-    # def is_image(self, filepath: str) -> tuple:
-    #     """ イメージファイル判定 """
-    #     return FILE_FILTER_IMAGE.match(filepath)
-       
-    # def is_maya(self, filepath: str) -> tuple:
-    #     """ Mayaファイル判定 """
-    #     return FILE_FILTER_MAYA.match(filepath)
+
 
        
-    # def is_obj(self, filepath: str) -> tuple:
-    #     """ Objファイル判定 """
-    #     return FILE_FILTER_OBJ.match(filepath)
+    def is_obj(self, filepath: str) -> tuple:
+        """ Objファイル判定 """
+        return FILE_FILTER_OBJ.match(filepath)
 
     
-    # def is_usd(self, filepath: str) -> tuple:
-    #     """ USDファイル判定 """
-    #     return FILE_FILTER_USD.match(filepath)
+
     
 
     def open_dir(self):
@@ -867,13 +835,6 @@ class AppMain:
                         open_in_explorer(_filepath)
 
 
-
-    def open_file(self, filepath, recent=False):
-        """ Plugin Builtin Function """
-        if recent:
-            self.add_recent_file(filepath)
-
-        cmds.file(filepath, open=True, force=True)
         
 
     def reference_file(self, filepath: str, namespace: str=None):
@@ -941,26 +902,23 @@ class AppMain:
         cmds.setAttr(f'{_plane}.colorSpace', 'sRGB - Texture', type='string')
 
 
-    # def set_fps(self, value: int):
-    #     fps_dict = {
-    #         15: "game",
-    #         24: "film",
-    #         25: "pal",
-    #         30: "ntsc",
-    #         48: "show",
-    #         50: "palf",
-    #         60: "ntscf"
-    #     }
+    def set_fps(self, value: int):
+        fps_dict = {
+            15: "game",
+            24: "film",
+            25: "pal",
+            30: "ntsc",
+            48: "show",
+            50: "palf",
+            60: "ntscf"
+        }
 
-    #     value = int(float(value)+0.5)
+        value = int(float(value)+0.5)
 
-    #     cmds.currentUnit(time=fps_dict[value])
+        cmds.currentUnit(time=fps_dict[value])
 
 
-    def set_framerange(self, headin: int, cutin: int, cutout: int, tailout: int):
-        cmds.playbackOptions(animationStartTime=headin, animationEndTime=tailout)
-        cmds.playbackOptions(minTime=headin, maxTime=tailout)
-        cmds.currentTime(headin)
+
 
 
 
@@ -1079,44 +1037,25 @@ class AppMain:
 
 
 
-    # def save_file(self, filepath: str, mkdir=False, recent=False):
-    #     """ ファイル保存 """
-    #     if mkdir:
-    #         _dirpath = os.path.dirname(filepath)
-    #         if not os.path.exists(_dirpath):
-    #             os.makedirs(_dirpath)
+    def save_file(self, filepath: str, mkdir=False, recent=False):
+        """ ファイル保存 """
+        if mkdir:
+            _dirpath = os.path.dirname(filepath)
+            if not os.path.exists(_dirpath):
+                os.makedirs(_dirpath)
 
-    #     if recent:
-    #         self.add_recent_file(filepath)
-
-
-    #     cmds.file(rename=filepath)
-
-    #     filename, ext = os.path.splitext(filepath)
-    #     if ext.lower() == '.mb':
-    #         cmds.file(save=True, type='mayaBinary')
-    #     elif ext.lower() == '.ma':
-    #         cmds.file(save=True, type='mayaAscii')
+        if recent:
+            self.add_recent_file(filepath)
 
 
-    def save_selection(self, filepath: str):
-        """ 選択を保存 """
-        filetype_dict = {
-            '.mb': 'mayaBinary',
-            '.ma': 'mayaAscii',
-            '.fbx': 'FBX export',
-            '.obj': 'OBJexport',
-        }
+        cmds.file(rename=filepath)
 
-        _nodes = cmds.ls(sl=True)
-        if not _nodes:
-            RuntimeError('Select any node')
+        filename, ext = os.path.splitext(filepath)
+        if ext.lower() == '.mb':
+            cmds.file(save=True, type='mayaBinary')
+        elif ext.lower() == '.ma':
+            cmds.file(save=True, type='mayaAscii')
 
-        _, _ext = os.path.splitext(filepath)
-        _ext = _ext.lower()
-        _filetype = filetype_dict.get(_ext)
-
-        cmds.file(filepath, force=True, type =_filetype, exportSelected=True)
 
 
     def start_end_infinity(self, node, start_frame, end_frame):
