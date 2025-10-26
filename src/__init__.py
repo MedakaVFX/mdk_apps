@@ -20,8 +20,6 @@ import os
 import sys
 
 
-print('MDK | > Import mdk_apps.')
-
 if os.environ.get('MDK_DEBUG'):
     print('MDK | ---------------------------')
     print('MDK | [ import mdkapps package]')
