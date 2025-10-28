@@ -41,6 +41,7 @@ import sys
 #=======================================#
 # Import Maya Modules
 #=======================================#
+from cur.shinobi.snb_libs.env import get_filepath
 import maya.cmds as cmds
 import maya.mel as mel
 from maya import OpenMayaUI as omui
@@ -115,6 +116,7 @@ FILE_FILTER_RAW = re.compile(r'.+\.(cr2|cr3|dng|CR2|CR3|DNG)')
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 FILE_FILTER_TEXT = re.compile(r'.+\.(doc|txt|text|json|py|usda|nk|sh|zsh|bat)')
 
+FILE_NODES_LIST = ['filetexture', ]
 SCRIPT_EXT_LIST = ['.py', '.mel', '.bat', '.sh', '.zsh']
 
 #=======================================#
@@ -272,13 +274,58 @@ def is_usd(filepath: str) -> tuple:
     """ USDファイル判定 """
     return FILE_FILTER_USD.match(filepath)
 
+def open_dir():
+    """ Plugin Builtin Function """
+    _nodes = get_selected_nodes()
+    if _nodes:
+        for _node in _nodes:
+            if cmds.nodeType(_node) in FILE_NODES_LIST:
+                if cmds.nodeType(_node) == 'file':
+                    _filepath = cmds.getAttr(f'{_node}.fileTextureName')
+                    open_in_explorer(_filepath)
+            
+    else:
+        _filepath = get_filepath()
+        if _filepath:
+            open_folder(_filepath)
+
+
+def open_file(filepath, recent=False):
+    """ Plugin Builtin Function """
+    raise NotImplementedError('未実装')
+
+
+def open_folder(filepath):
+    """
+    フォルダを開く
+    """
+    _filepath = pathlib.Path(filepath)
+    OS_NAME = platform.system()
+
+    if _filepath.exists():
+        if _filepath.is_file():
+            _filepath = _filepath.parent
+
+        if OS_NAME == 'Windows':
+            cmd = 'explorer {}'.format(str(_filepath))
+            subprocess.Popen(cmd)
+
+        elif OS_NAME == 'Darwin':
+            subprocess.Popen(['open', _filepath])
+
+        else:
+            subprocess.Popen(["xdg-open", _filepath])
+
+
+
 def open_file(filepath, recent=False):
     """ Plugin Builtin Function """
     if recent:
         add_recent_file(filepath)
 
     cmds.file(filepath, open=True, force=True)
-    
+
+
 def open_in_explorer(filepath: str):
     """
     Explorerでフォルダを開く
