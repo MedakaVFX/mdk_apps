@@ -87,7 +87,23 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
     raise RuntimeError('未実装')
 
 
-def open_dir(filepath):
+def open_dir():
+    """ Plugin Builtin Function """
+    _nodes = self.get_selected_nodes()
+
+    if _nodes:
+        raise NotImplementedError('未実装')
+    else:
+        _filepath = get_filepath()
+        open_folder(_filepath)
+
+
+def open_file(self, filepath, recent=False):
+    """ Plugin Builtin Function """
+    raise NotImplementedError('未実装')
+
+
+def open_folder(filepath):
     """
     フォルダを開く
     """
@@ -107,6 +123,7 @@ def open_dir(filepath):
 
         else:
             subprocess.Popen(["xdg-open", _filepath])
+
 
 
 def open_in_explorer(filepath: str):
@@ -413,36 +430,36 @@ class AppMain:
         return FILE_FILTER_VBD.match(filepath)
     
 
-    def open_dir(self):
-        print('MDK | Open Dir')
+    # def open_dir(self):
+    #     print('MDK | Open Dir')
 
-        nodes = hou.selectedNodes()
+    #     nodes = hou.selectedNodes()
 
-        if len(nodes)==0:
-            _filepath = hou.hipFile.path()
-            _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
+    #     if len(nodes)==0:
+    #         _filepath = hou.hipFile.path()
+    #         _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
 
-            print(f'MDK | File = {_filepath}')
+    #         print(f'MDK | File = {_filepath}')
             
-            if os.path.exists(_filepath):
-                open_in_explorer(_filepath)
+    #         if os.path.exists(_filepath):
+    #             open_in_explorer(_filepath)
 
-        else:
-            for node in nodes:
-                filepath_list = []
-                node_type = node.type().name()
+    #     else:
+    #         for node in nodes:
+    #             filepath_list = []
+    #             node_type = node.type().name()
 
-                print(f'MDK | Nodetype = {node_type}')
+    #             print(f'MDK | Nodetype = {node_type}')
 
-                if node_type in sorted(FILENODE_DICT):
-                    key = FILENODE_DICT.get(node_type)
-                    filepath_list.append(node.parm(key).eval())
+    #             if node_type in sorted(FILENODE_DICT):
+    #                 key = FILENODE_DICT.get(node_type)
+    #                 filepath_list.append(node.parm(key).eval())
                 
-                print(filepath_list)
+    #             print(filepath_list)
 
-                for _filepath in filepath_list:
-                    _filepath = _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
-                    open_dir(_filepath)
+    #             for _filepath in filepath_list:
+    #                 _filepath = _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
+    #                 open_dir(_filepath)
 
 
 

@@ -59,6 +59,11 @@ def get_ext() -> str:
     """ 拡張子を取得 """
     return '.dat'
 
+def get_filepath() -> str:
+    """現在開いているファイルパスを取得"""
+    return None
+
+
 def get_script_exts() -> list:
     """ スクリプト拡張子リストを取得 """
     return ['.py']
@@ -146,10 +151,7 @@ def set_unit(value: str):
 #             return pathlib.Path(_filepath).name
 
     
-#     def get_filepath(self) -> str:
-#         """現在開いているファイルパスを取得"""
-#         return None
-    
+
 #     def get_fps(self) -> float:
 #         return 24.000
     
