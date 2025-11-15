@@ -57,21 +57,10 @@ FILE_NODES_LIST = ['Read', 'Write', 'ReadGeo2', ]
 
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 
+
 # ======================================= #
-# Functins
+# Get
 # ======================================= #
-def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=None, filetype='jpg'):
-    """ プレイブラストを作成
-    
-    Args:
-        filepath(str): 出力ファイルパス
-        size(list | turple): サイズ
-        range(list | turple): サイズ
-    """
-
-    raise RuntimeError('未実装')
-
-
 # def get_main_window():
 #     """ Get the Nuke main window.
 
@@ -105,6 +94,23 @@ def get_main_window():
         if widget.metaObject().className() == "Foundry::UI::DockMainWindow":
             return widget
     return None
+
+# ======================================= #
+# Functins
+# ======================================= #
+def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=None, filetype='jpg'):
+    """ プレイブラストを作成
+    
+    Args:
+        filepath(str): 出力ファイルパス
+        size(list | turple): サイズ
+        range(list | turple): サイズ
+    """
+
+    raise RuntimeError('未実装')
+
+
+
 
 
 def open_dir(filepath) -> None:

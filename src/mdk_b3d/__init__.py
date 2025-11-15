@@ -55,7 +55,7 @@ EXT_DICT = {
     'usd': '.usd',
 }
 
-
+SCRIPT_EXTS = ['.py']
 # ======================================= #
 # Decorators
 # ======================================= #
@@ -72,6 +72,24 @@ def context_window(func):
 
     return wrapper
 
+
+# ======================================= #
+# Get
+# ======================================= #
+def get_ext() -> str:
+    return '.b3d'
+
+def get_ext_list() -> list[str]:
+    """ 拡張子リストを返す"""
+    return list(EXT_LIST)
+
+def get_script_exts() -> list[str]:
+    """ スクリプト拡張子リストを取得
+    
+    Returns:
+        list[str]: スクリプト拡張子リスト
+    """
+    return SCRIPT_EXTS
 # ======================================= #
 # Functions
 # ======================================= #
@@ -87,8 +105,6 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
     raise RuntimeError('未実装')
 
 
-def get_ext() -> str:
-    return '.b3d'
 
 
 @context_window

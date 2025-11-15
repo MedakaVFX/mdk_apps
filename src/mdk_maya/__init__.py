@@ -113,7 +113,40 @@ FILE_FILTER_RAW = re.compile(r'.+\.(cr2|cr3|dng|CR2|CR3|DNG)')
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 FILE_FILTER_TEXT = re.compile(r'.+\.(doc|txt|text|json|py|usda|nk|sh|zsh|bat)')
 
+SCRIPT_EXTS = ['.py', '.mel']
 
+
+# ======================================= #
+# Get
+# ======================================= #
+def get_ext(key: str = None) -> str:
+    """ 拡張子を返す 
+    
+    """
+    if key is None:
+        return '.ma'
+    
+    else:
+        return EXT_DICT.get(key.lower())
+        
+
+def get_ext_list() -> list[str]:
+    """ 拡張子リストを返す"""
+    return list(EXT_LIST)
+
+
+def get_script_exts() -> list[str]:
+    """ スクリプト拡張子リストを取得
+    
+    Returns:
+        list[str]: スクリプト拡張子リスト
+    """
+    return SCRIPT_EXTS
+
+
+# ======================================= #
+# Set
+# ======================================= #
 #=======================================#
 # Functions
 #=======================================#
@@ -496,20 +529,7 @@ class AppMain:
     def get_current_render(self) -> str:
         return cmds.getAttr('defaultRenderGlobals.currentRenderer')
 
-    def get_ext(self, key: str = None) -> str:
-        """ 拡張子を返す 
-        
-        """
-        if key is None:
-            return '.ma'
-        
-        else:
-            return EXT_DICT.get(key.lower())
-            
 
-    def get_ext_list(self):
-        """ 拡張子リストを返す"""
-        return list(EXT_LIST)
     
 
     def get_basename(self) -> str:
