@@ -56,6 +56,8 @@ EXT_DICT = {
 }
 
 SCRIPT_EXTS = ['.py']
+
+
 # ======================================= #
 # Decorators
 # ======================================= #
@@ -83,6 +85,14 @@ def get_ext_list() -> list[str]:
     """ 拡張子リストを返す"""
     return list(EXT_LIST)
 
+def get_selected_nodes() -> list:
+    """ 選択しているノードを取得
+   
+    Returns:
+        list: 選択しているノードリスト
+    """
+    return bpy.context.selected_objects
+
 def get_script_exts() -> list[str]:
     """ スクリプト拡張子リストを取得
     
@@ -90,6 +100,7 @@ def get_script_exts() -> list[str]:
         list[str]: スクリプト拡張子リスト
     """
     return SCRIPT_EXTS
+
 # ======================================= #
 # Functions
 # ======================================= #

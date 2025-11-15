@@ -63,6 +63,14 @@ SCRIPT_EXTS = ['.py', '.nk']
 # ======================================= #
 # Get
 # ======================================= #
+def get_ext() -> str:
+    """ 拡張子を取得 
+    
+    Returns:
+        str: 拡張子
+    """
+    return '.nk'
+
 # def get_main_window():
 #     """ Get the Nuke main window.
 
@@ -81,14 +89,6 @@ SCRIPT_EXTS = ['.py', '.nk']
 
 #     # return QtWidgets.QApplication.activeWindow()
 
-def get_ext() -> str:
-    """ 拡張子を取得 
-    
-    Returns:
-        str: 拡張子
-    """
-    return '.nk'
-
 
 def get_main_window():
     app = QtWidgets.QApplication.instance()
@@ -97,6 +97,15 @@ def get_main_window():
             return widget
     return None
 
+def get_selected_nodes() -> list:
+    """ 選択しているノードを取得
+    
+    Returns:
+        list: 選択しているノードリスト
+    """
+    return nuke.selectedNodes()
+
+
 def get_script_exts() -> list[str]:
     """ スクリプト拡張子リストを取得
     
@@ -104,6 +113,38 @@ def get_script_exts() -> list[str]:
         list[str]: スクリプト拡張子リスト
     """
     return SCRIPT_EXTS
+
+
+# ======================================= #
+# Set
+# ======================================= #
+
+def set_current_time(value: int):
+    """ 現在の時間を設定
+    Args:
+        value (int): フレーム番号
+    """
+    nuke.frame(value)
+
+
+def set_fps(value: float):
+    """ Plugin Builtin Function
+    * フレームレートを設定
+    """
+    nuke.root()['fps'].setValue(float(value))
+
+
+def set_frame_range(first: int, last: int):
+    """ Plugin Builtin Function
+    * フレームレンジを設定
+
+    Args:
+        first (int): フレーム範囲の開始フレーム
+        last (int): フレーム範囲の終了フレーム
+    """
+    nuke.root()['first_frame'].setValue(int(first))
+    nuke.root()['last_frame'].setValue(int(last))
+
 
 # ======================================= #
 # Functins
@@ -118,8 +159,6 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
     """
 
     raise RuntimeError('未実装')
-
-
 
 
 
@@ -174,39 +213,17 @@ def save_file(filepath):
     nuke.scriptSaveAs(filepath, -1)
 
 
-def set_current_time(value: int):
-    """ 現在の時間を設定
-    Args:
-        value (int): フレーム番号
-    """
-    nuke.frame(value)
-
-
-def set_fps(value: float):
-    """ Plugin Builtin Function
-    * フレームレートを設定
-    """
-    nuke.root()['fps'].setValue(float(value))
-
-
-def set_frame_range(first: int, last: int):
-    """ Plugin Builtin Function
-    * フレームレンジを設定
-
-    Args:
-        first (int): フレーム範囲の開始フレーム
-        last (int): フレーム範囲の終了フレーム
-    """
-    nuke.root()['first_frame'].setValue(int(first))
-    nuke.root()['last_frame'].setValue(int(last))
+def save_selection(filepath):
+    """ 選択ノードを保存 """
+    nuke.nodeCopy(filepath)
 
 
 # ======================================= #
 # Class
 # ======================================= #
-# class AppMain:
-#     def __init__(self):
-#         pass
+class AppMain:
+    def __init__(self):
+        pass
 
 #     # --------------------------------- #
 #     # Get / Set
