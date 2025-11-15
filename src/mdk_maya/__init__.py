@@ -4,16 +4,16 @@
 
 Info:
     * Created : v0.0.1 2024-11-15 Tatsuya YAMAGISHI
-    * Client : Maya 2026
     * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
 
     
 Release Note:
-    * v0.0.3 (v0.0.3) 2025-11-15 Tatsuya Yamagishi
+    * v0.0.3 [v0.0.3] 2025-10-21 Tatsuya Yamagishi
         * added: apply_alembic_cache()
         * added: set_aperture_size()
         * added: set_unit()
+        * Added: get_main_window()
 
         
     * v0.0.2 (v0.0.2) 2025-02-03 Tatsuya Yamagishi
@@ -43,6 +43,7 @@ import sys
 #=======================================#
 import maya.cmds as cmds
 import maya.mel as mel
+from maya import OpenMayaUI as omui
 
 from maya.app.renderSetup.model import selector
 from maya.app.renderSetup.model import renderLayer
@@ -61,7 +62,7 @@ try:
 except:
     from qtpy import QtCore, QtGui, QtWidgets
 
-from maya import OpenMayaUI as omui 
+
 
 try:
     from shiboken2 import wrapInstance
@@ -114,50 +115,184 @@ FILE_FILTER_RAW = re.compile(r'.+\.(cr2|cr3|dng|CR2|CR3|DNG)')
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 FILE_FILTER_TEXT = re.compile(r'.+\.(doc|txt|text|json|py|usda|nk|sh|zsh|bat)')
 
-SCRIPT_EXTS = ['.py', '.mel']
+FILE_NODES_LIST = ['filetexture', ]
+FPS_MAP = {
+    15: 'game',
+    23.976: '23.976fps',
+    24: 'film',
+    25: 'pal',
+    30: 'ntsc',
+    60: 'ntscf'
+}
+SCRIPT_EXT_LIST = ['.py', '.mel', '.bat', '.sh', '.zsh']
+
+UNIT_MAP = {
+    'centimeter': 'cm',
+    'millimeter': 'mm',
+    'meter': 'm',
+    'kilometer': 'km',
+}
+
+
+
 
 
 # ======================================= #
 # Get
 # ======================================= #
-def get_ext(key: str = None) -> str:
+def get_ext(self) -> str:
     """ 拡張子を返す 
     
     """
-    if key is None:
-        return '.ma'
+    return '.ma'
+
+def get_main_window():
+    """ Mayaのメインウィンドウを取得 
     
-    else:
-        return EXT_DICT.get(key.lower())
+    """
+    ptr = omui.MQtUtil.mainWindow()
+
+    if ptr is not None:
+        return wrapInstance(int(ptr), QtWidgets.QWidget)
+
+
+def get_render() -> str:
+    """ 現在のレンダラーを取得 """
+    return cmds.getAttr('defaultRenderGlobals.currentRenderer')
+
         
 
-def get_ext_list() -> list[str]:
-    """ 拡張子リストを返す"""
-    return list(EXT_LIST)
 
-def get_selected_nodes() -> list[str]:
-    """ 選択しているノードを取得
+def get_script_exts() -> list:
+    """ スクリプト拡張子リストを取得 """
+    return SCRIPT_EXT_LIST
+
+def get_selected_nodes(long=True) -> list[str]:
+    """ 選択しているノードを返す
+
+    Args:
+        long(bool): True: フルパス, False: ノード名のみ
     
     Returns:
         list[str]: 選択しているノードリスト
     """
-    return cmds.ls(sl=True)
-
-def get_script_exts() -> list[str]:
-    """ スクリプト拡張子リストを取得
-    
-    Returns:
-        list[str]: スクリプト拡張子リスト
-    """
-    return SCRIPT_EXTS
-
+    return cmds.ls(sl=True, long=long)
 
 # ======================================= #
 # Set
 # ======================================= #
-#=======================================#
+
+def set_frame_range(head_in: int, cut_in: int, cut_out: int, tail_out: int):
+    cmds.playbackOptions(animationStartTime=head_in, animationEndTime=tail_out)
+    cmds.playbackOptions(minTime=head_in, maxTime=tail_out)
+    cmds.currentTime(head_in)
+
+
+
+
+def set_current_frame(value: int):
+    """ カレントフレームを設定 """
+    cmds.currentTime(value)
+
+
+def set_fps(value: int):
+    """数値で指定したFPSをMayaのtime unitに変換して設定する"""
+
+
+    # 23.976などfloat比較が難しい場合は四捨五入で対応
+    key = round(value, 3)
+    unit = FPS_MAP.get(key)
+
+    if not unit:
+        raise ValueError(f"未対応のFPS値です: {value}")
+
+    cmds.currentUnit(time=unit)
+
+
+def set_renderer(renderer: str):
+    render_globals_node = cmds.ls(type='renderGlobals')[0]
+
+    cmds.setAttr(render_globals_node + '.currentRenderer', renderer, type='string')
+
+    if renderer == 'vray':
+        if not cmds.ls('vraySettings'):
+            cmds.shadingNode("VRaySettingsNode", asUtility=True, name = "vraySettings")
+    
+    elif renderer == 'arnold':
+        cmds.setAttr('defaultRenderGlobals.currentRenderer', 'arnold', type='string')
+
+        if not cmds.ls('defaultArnoldRenderOptions'):
+            cmds.shadingNode("aiOptions", asUtility=True, name = "defaultArnoldRenderOptions")
+
+def set_render_frame_range(first_frame: int, last_frame: int):
+    renderer = get_render()
+
+    if renderer == 'arnold':
+        node = 'defaultRenderGlobals'
+        cmds.setAttr(f'{node}.outFormatControl', 0)
+        cmds.setAttr(f'{node}.animation', 1)
+        cmds.setAttr(f'{node}.putFrameBeforeExt', 1)
+        cmds.setAttr(f'{node}.periodInExt', 1)
+        cmds.setAttr(f'{node}.extensionPadding', 4)
+
+        cmds.setAttr(f'{node}.startFrame', first_frame)
+        cmds.setAttr(f'{node}.endFrame', last_frame)
+
+    elif renderer =='vray':
+        node = 'vraySettings'
+        cmds.setAttr(f'{node}.animType', 1)
+        cmds.setAttr(f'{node}.animBatchOnly', 1)
+
+        cmds.setAttr(f'defaultRenderGlobals.startFrame', first_frame)
+        cmds.setAttr(f'defaultRenderGlobals.endFrame', last_frame)
+
+def set_render_size(width: int, height: int):
+    print(f'set render size = {width} x {height}')
+
+    cmds.setAttr("defaultResolution.aspectLock", 0)
+    renderer = get_render()
+
+    if renderer == 'vray':
+        vray_setting = 'vraySettings'
+        cmds.setAttr(f'{vray_setting}.aspectLock', 0)
+        cmds.setAttr(f'{vray_setting}.width', width)
+        cmds.setAttr(f'{vray_setting}.height', height)
+        cmds.setAttr(f'{vray_setting}.pixelAspect', 1.0)
+        cmds.setAttr(f'{vray_setting}.aspectLock', True)
+
+    else:
+        default_resolution = 'defaultResolution'
+        cmds.setAttr(f'{default_resolution}.width', int(width))
+        cmds.setAttr(f'{default_resolution}.height', int(height))
+
+def set_unit(unit: str):
+    """ 単位を設定
+    
+    """
+
+
+    if unit in UNIT_MAP:
+        cmds.currentUnit(linear=UNIT_MAP[unit])
+    else:
+        raise ValueError(f'Invalid unit: {unit}')
+    
+    
+# ======================================= #
 # Functions
-#=======================================#
+# ======================================= #
+def add_recent_file(filepath: str):
+    filepath = filepath.replace('\\','/') 
+    _filename, _ext = os.path.splitext(filepath)
+    _ext = _ext.lower()
+
+    if _ext == '.ma':
+        cmd = 'addRecentFile( "{}", "mayaAscii")'.format(filepath)
+        mel.eval(cmd)
+    elif _ext == '.mb':
+        cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
+        mel.eval(cmd)
+
+
 def create_playblast(
             filepath: str,
             size: list|tuple=None,
@@ -198,19 +333,195 @@ def exec_script(filepath):
     if FILE_FILTER_SCRIPT.match(filepath):
         if filepath.lower().endswith('.py'):
             exec_python_file(filepath, globals())
-    else:
-        raise TypeError()
+        elif filepath.lower().endswith('.mel'):
+            mel.eval(filepath)
+    
     
 
 def exec_python_file(filepath, globals=None, locals=None):
     if globals is None:
         globals = {}
-    globals.update({
-        '__file__': filepath,
-        '__name__': '__main__',
-    })
+
+    globals.update(
+        {
+            '__file__': filepath,
+            '__name__': '__main__',
+        }
+    )
     with open(filepath, 'rb') as file:
         exec(compile(file.read(), filepath, 'exec'), globals, locals)
+
+def export_abc(
+        filepath: str,
+        nodes: list[str],
+        start_frame: int = None,
+        end_frame: int = None):
+    
+    """
+    Reference from:
+
+        - https://stackoverflow.com/questions/43612557/maya-abcexport-with-python
+
+    """
+    if not nodes:
+        raise ValueError('Select any nodes')
+    
+    cmds.select(nodes)
+    if (start_frame is None) and (end_frame is None):
+        frames = ''
+
+    else:
+        frames = f'-frameRange {start_frame} {end_frame}'
+    if nodes and cmds.nodeType(nodes[0]) == "transform":
+        name = nodes[0]
+        if name.find("|")!= -1:
+            name = name.rsplit("|",1)[1]
+
+        nodes = "".join([" -root "+x for x in nodes])
+        mel_cmd = f'AbcExport -j "{frames} -stripNamespaces -uvWrite{nodes} -file {filepath}"'
+
+        # Make directory
+        dirname = os.path.dirname(filepath)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        
+        try:
+            mel.eval(mel_cmd)
+        except Exception as ex:
+            raise ValueError (ex)
+        
+
+
+def import_file(filepath, namespace=None):    
+    if os.path.exists(filepath):
+        file, ext = os.path.splitext(filepath)
+
+        if namespace is None:
+            if is_usd(filepath):
+                # pm.importFile(filepath, type='USD Import',preserveReferences=True)
+                return cmds.file(
+                        filepath,
+                        i=True,
+                        type='USD Import',
+                        namespace=namespace,
+                        preserveReferences=True)
+            
+            elif is_image(filepath):
+                import_texture(filepath)
+
+            elif is_maya(filepath):
+                # pm.importFile(filepath, preserveReferences=True)
+                return cmds.file(filepath, i=True)
+            else:
+                raise TypeError('MDK | Not supported file type')
+            
+        else:
+            currentNs = cmds.namespaceInfo(cur=True)
+
+            if not cmds.namespace(ex=':{}'.format(namespace)):
+                cmds.namespace(add=':{}'.format(namespace))
+
+            cmds.namespace(set=':{}'.format(namespace))
+
+            return cmds.file(filepath, i=True, mergeNamespacesOnClash=False, namespace=namespace)
+                    
+    else:
+        raise FileNotFoundError()
+
+
+def import_texture(filepath: str, colorspace=None):
+    """ テクスチャをインポート 
+    
+    Args:
+        filepath (str): テクスチャファイルパス
+        colorspace (str, optional): カラー空間. Defaults to None.
+    """
+    node_name = pathlib.Path(filepath).stem
+    # file_node = cmds.shadingNode('file', asShader=True, name=node_name)
+    file_node = cmds.shadingNode('file', asShader=True)
+
+    cmds.setAttr(file_node + '.fileTextureName', filepath, type='string')
+
+    # place2d_node = cmds.shadingNode('place2dTexture', asUtility=True, name=place2d_name)
+    place2d_node = cmds.shadingNode('place2dTexture', asUtility=True)
+
+    # Fileノードに2Dプレースメントノードを接続
+    cmds.connectAttr(place2d_node + '.outUV', file_node + '.uvCoord')
+    cmds.connectAttr(place2d_node + '.outUvFilterSize', file_node + '.uvFilterSize')
+
+    if colorspace:
+        cmds.setAttr(f'{file_node}.ignoreColorSpaceFileRules', 1)
+        cmds.setAttr(f'{file_node}.colorSpace', colorspace, type='string')
+
+    return file_node
+
+
+def import_usd(filepath: str, namespace: str=None):
+    cmds.file(filepath, i=True, type='USD Import', preserveReferences=True)
+
+
+def is_image(filepath: str) -> tuple:
+    """ イメージファイル判定 """
+    return FILE_FILTER_IMAGE.match(filepath)
+
+def is_maya(filepath: str) -> tuple:
+    """ Mayaファイル判定 """
+    return FILE_FILTER_MAYA.match(filepath)
+
+def is_usd(filepath: str) -> tuple:
+    """ USDファイル判定 """
+    return FILE_FILTER_USD.match(filepath)
+
+def open_dir():
+    """ Plugin Builtin Function """
+    _nodes = get_selected_nodes()
+    if _nodes:
+        for _node in _nodes:
+            if cmds.nodeType(_node) in FILE_NODES_LIST:
+                if cmds.nodeType(_node) == 'file':
+                    _filepath = cmds.getAttr(f'{_node}.fileTextureName')
+                    open_in_explorer(_filepath)
+            
+    else:
+        _filepath = get_filepath()
+        if _filepath:
+            open_folder(_filepath)
+
+
+def open_file(filepath, recent=False):
+    """ Plugin Builtin Function """
+    raise NotImplementedError('未実装')
+
+
+def open_folder(filepath):
+    """
+    フォルダを開く
+    """
+    _filepath = pathlib.Path(filepath)
+    OS_NAME = platform.system()
+
+    if _filepath.exists():
+        if _filepath.is_file():
+            _filepath = _filepath.parent
+
+        if OS_NAME == 'Windows':
+            cmd = 'explorer {}'.format(str(_filepath))
+            subprocess.Popen(cmd)
+
+        elif OS_NAME == 'Darwin':
+            subprocess.Popen(['open', _filepath])
+
+        else:
+            subprocess.Popen(["xdg-open", _filepath])
+
+
+
+def open_file(filepath, recent=False):
+    """ Plugin Builtin Function """
+    if recent:
+        add_recent_file(filepath)
+
+    cmds.file(filepath, open=True, force=True)
 
 
 def open_in_explorer(filepath: str):
@@ -233,6 +544,71 @@ def open_in_explorer(filepath: str):
     else:
         raise FileNotFoundError(f'File is not found.')
 
+
+def reference_file(filepath: str, namespace: str=None):
+    """ ファイルをリファレンス
+
+    Updated 2024/02/14 Yamagishi
+        * namaspcae 判定に or namespace == '' を追加
+
+    Args:
+        plugin(object): パイプライン用Mayaプラグインクラス
+        filepath(str): リファレンスするファイル
+        namespace(:obj:`str`, optional): namespace=None
+    """
+    # cmds.createReference(filepath, ns=namespace)
+    
+    if (namespace is None) or (namespace ==''):
+        namespace = ':'
+
+    return cmds.file(filepath, reference=True, mergeNamespacesOnClash=True, namespace=namespace)
+
+
+def save_file(filepath: str, mkdir=False, recent=False):
+    """ ファイル保存 """
+    if mkdir:
+        _dirpath = os.path.dirname(filepath)
+        if not os.path.exists(_dirpath):
+            os.makedirs(_dirpath)
+
+    if recent:
+        add_recent_file(filepath)
+
+
+    cmds.file(rename=filepath)
+
+    filename, ext = os.path.splitext(filepath)
+    if ext.lower() == '.mb':
+        cmds.file(save=True, type='mayaBinary')
+    elif ext.lower() == '.ma':
+        cmds.file(save=True, type='mayaAscii')
+
+        
+def save_selection(filepath: str):
+    """ 選択を保存
+    
+    Args:
+        filepath (str): 保存するファイルのパス
+    """
+    filetype_dict = {
+        '.mb': 'mayaBinary',
+        '.ma': 'mayaAscii',
+        '.fbx': 'FBX export',
+        '.obj': 'OBJexport',
+    }
+
+    _nodes = cmds.ls(sl=True)
+    if not _nodes:
+        RuntimeError('Select any node')
+
+    _, _ext = os.path.splitext(filepath)
+    _ext = _ext.lower()
+    _filetype = filetype_dict.get(_ext)
+
+    cmds.file(filepath, force=True, type =_filetype, exportSelected=True)
+
+
+    
 
 # ======================================= #
 # Class
@@ -261,20 +637,6 @@ class AppMain:
         print(f'Apply Alembic Cache: {filepath}')
         cmds.AbcImport(filepath, mode="import", connect=_selection[0])
         # cmds.AbcImport(filepath, mode="import", rpr=_selection[0], merge=True)
-
-
-
-    def add_recent_file(self, filepath: str):
-        filepath = filepath.replace('\\','/') 
-        _filename, _ext = os.path.splitext(filepath)
-        _ext = _ext.lower()
-
-        if _ext == '.ma':
-            cmd = 'addRecentFile( "{}", "mayaAscii")'.format(filepath)
-            mel.eval(cmd)
-        elif _ext == '.mb':
-            cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
-            mel.eval(cmd)
 
 
 
@@ -356,46 +718,46 @@ class AppMain:
         )
 
 
-    def export_abc(
-                self,
-                filepath: str,
-                nodes: list[str],
-                startframe: int = None,
-                endframe: int = None):
+    # def export_abc(
+    #             self,
+    #             filepath: str,
+    #             nodes: list[str],
+    #             startframe: int = None,
+    #             endframe: int = None):
         
-        """
-        Reference from:
+    #     """
+    #     Reference from:
 
-            - https://stackoverflow.com/questions/43612557/maya-abcexport-with-python
+    #         - https://stackoverflow.com/questions/43612557/maya-abcexport-with-python
 
-        """
-        if not nodes:
-            raise ValueError('Select any nodes')
+    #     """
+    #     if not nodes:
+    #         raise ValueError('Select any nodes')
         
-        cmds.select(nodes)
-        if (startframe is None) and (endframe is None):
-            frames = ''
+    #     cmds.select(nodes)
+    #     if (startframe is None) and (endframe is None):
+    #         frames = ''
 
-        else:
-            frames = f'-frameRange {startframe} {endframe}'
+    #     else:
+    #         frames = f'-frameRange {startframe} {endframe}'
 
-        if nodes and cmds.nodeType(nodes[0]) == "transform":
-            name = nodes[0]
-            if name.find("|")!= -1:
-                name = name.rsplit("|",1)[1]
+    #     if nodes and cmds.nodeType(nodes[0]) == "transform":
+    #         name = nodes[0]
+    #         if name.find("|")!= -1:
+    #             name = name.rsplit("|",1)[1]
 
-            nodes = "".join([" -root "+x for x in nodes])
-            mel_cmd = f'AbcExport -j "{frames} -stripNamespaces -uvWrite{nodes} -file {filepath}"'
+    #         nodes = "".join([" -root "+x for x in nodes])
+    #         mel_cmd = f'AbcExport -j "{frames} -stripNamespaces -uvWrite{nodes} -file {filepath}"'
 
-            # Make directory
-            dirname = os.path.dirname(filepath)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+    #         # Make directory
+    #         dirname = os.path.dirname(filepath)
+    #         if not os.path.exists(dirname):
+    #             os.makedirs(dirname)
             
-            try:
-                mel.eval(mel_cmd)
-            except Exception as ex:
-                raise ValueError (ex)
+    #         try:
+    #             mel.eval(mel_cmd)
+    #         except Exception as ex:
+    #             raise ValueError (ex)
 
 
     def export_fbx(
@@ -537,7 +899,20 @@ class AppMain:
     def get_current_render(self) -> str:
         return cmds.getAttr('defaultRenderGlobals.currentRenderer')
 
+    def get_ext(self, key: str = None) -> str:
+        """ 拡張子を返す 
+        
+        """
+        if key is None:
+            return '.ma'
+        
+        else:
+            return EXT_DICT.get(key.lower())
+            
 
+    def get_ext_list(self):
+        """ 拡張子リストを返す"""
+        return list(EXT_LIST)
     
 
     def get_basename(self) -> str:
@@ -601,14 +976,14 @@ class AppMain:
             
         return _plane
 
-    def get_main_window(self):
-        """ Mayaのメインウィンドウを取得 
+    # def get_main_window(self):
+    #     """ Mayaのメインウィンドウを取得 
         
-        """
-        ptr = omui.MQtUtil.mainWindow()
+    #     """
+    #     ptr = omui.MQtUtil.mainWindow()
 
-        if ptr is not None:
-            return wrapInstance(int(ptr), QtWidgets.QWidget)
+    #     if ptr is not None:
+    #         return wrapInstance(int(ptr), QtWidgets.QWidget)
         
 
     def get_render(self) -> str:
@@ -634,16 +1009,6 @@ class AppMain:
 
         
 
-    def get_selected_nodes(self, long=True) -> list[str]:
-        """ 選択しているノードを返す
-
-        Args:
-            long(bool): True: フルパス, False: ノード名のみ
-        
-        Returns:
-            list[str]: 選択しているノードリスト
-        """
-        return cmds.ls(sl=True, long=long)
 
 
 
@@ -684,25 +1049,25 @@ class AppMain:
             self.import_file(_filepath, namespace=namespace)
 
 
-    def import_texture(self, filepath, colorspace=None):
-        node_name = pathlib.Path(filepath).stem
-        # file_node = cmds.shadingNode('file', asShader=True, name=node_name)
-        file_node = cmds.shadingNode('file', asShader=True)
+    # def import_texture(self, filepath, colorspace=None):
+    #     node_name = pathlib.Path(filepath).stem
+    #     # file_node = cmds.shadingNode('file', asShader=True, name=node_name)
+    #     file_node = cmds.shadingNode('file', asShader=True)
 
-        cmds.setAttr(file_node + '.fileTextureName', filepath, type='string')
+    #     cmds.setAttr(file_node + '.fileTextureName', filepath, type='string')
 
-        # place2d_node = cmds.shadingNode('place2dTexture', asUtility=True, name=place2d_name)
-        place2d_node = cmds.shadingNode('place2dTexture', asUtility=True)
+    #     # place2d_node = cmds.shadingNode('place2dTexture', asUtility=True, name=place2d_name)
+    #     place2d_node = cmds.shadingNode('place2dTexture', asUtility=True)
 
-        # Fileノードに2Dプレースメントノードを接続
-        cmds.connectAttr(place2d_node + '.outUV', file_node + '.uvCoord')
-        cmds.connectAttr(place2d_node + '.outUvFilterSize', file_node + '.uvFilterSize')
+    #     # Fileノードに2Dプレースメントノードを接続
+    #     cmds.connectAttr(place2d_node + '.outUV', file_node + '.uvCoord')
+    #     cmds.connectAttr(place2d_node + '.outUvFilterSize', file_node + '.uvFilterSize')
 
-        if colorspace:
-            cmds.setAttr(f'{file_node}.ignoreColorSpaceFileRules', 1)
-            cmds.setAttr(f'{file_node}.colorSpace', colorspace, type='string')
+    #     if colorspace:
+    #         cmds.setAttr(f'{file_node}.ignoreColorSpaceFileRules', 1)
+    #         cmds.setAttr(f'{file_node}.colorSpace', colorspace, type='string')
 
-        return file_node
+    #     return file_node
 
 
         
@@ -716,13 +1081,7 @@ class AppMain:
         return FILE_FILTER_FBX.match(filepath)
         
 
-    def is_image(self, filepath: str) -> tuple:
-        """ イメージファイル判定 """
-        return FILE_FILTER_IMAGE.match(filepath)
-       
-    def is_maya(self, filepath: str) -> tuple:
-        """ Mayaファイル判定 """
-        return FILE_FILTER_MAYA.match(filepath)
+
 
        
     def is_obj(self, filepath: str) -> tuple:
@@ -730,9 +1089,7 @@ class AppMain:
         return FILE_FILTER_OBJ.match(filepath)
 
     
-    def is_usd(self, filepath: str) -> tuple:
-        """ USDファイル判定 """
-        return FILE_FILTER_USD.match(filepath)
+
     
 
     def open_dir(self):
@@ -760,32 +1117,8 @@ class AppMain:
                         open_in_explorer(_filepath)
 
 
-
-    def open_file(self, filepath, recent=False):
-        """ Plugin Builtin Function """
-        if recent:
-            self.add_recent_file(filepath)
-
-        cmds.file(filepath, open=True, force=True)
         
 
-    def reference_file(self, filepath: str, namespace: str=None):
-        """ ファイルをリファレンス
-
-        Updated 2024/02/14 Yamagishi
-            * namaspcae 判定に or namespace == '' を追加
-
-        Args:
-            plugin(object): パイプライン用Mayaプラグインクラス
-            filepath(str): リファレンスするファイル
-            namespace(:obj:`str`, optional): namespace=None
-        """
-        # cmds.createReference(filepath, ns=namespace)
-        
-        if (namespace is None) or (namespace ==''):
-            namespace = ':'
-
-        return cmds.file(filepath, reference=True, mergeNamespacesOnClash=True, namespace=namespace)
 
 
     def reference_files(self, filepath_list: list[str], namespace: str=None):
@@ -850,10 +1183,7 @@ class AppMain:
         cmds.currentUnit(time=fps_dict[value])
 
 
-    def set_framerange(self, headin: int, cutin: int, cutout: int, tailout: int):
-        cmds.playbackOptions(animationStartTime=headin, animationEndTime=tailout)
-        cmds.playbackOptions(minTime=headin, maxTime=tailout)
-        cmds.currentTime(headin)
+
 
 
 
@@ -887,28 +1217,28 @@ class AppMain:
 
 
 
-    def set_render_framerange(self, first_frame, last_frame):
-        renderer = self.get_render()
+    # def set_render_framerange(self, first_frame, last_frame):
+    #     renderer = self.get_render()
 
-        if renderer == 'arnold':
-            node = 'defaultRenderGlobals'
-            cmds.setAttr(f'{node}.outFormatControl', 0)
-            cmds.setAttr(f'{node}.animation', 1)
-            cmds.setAttr(f'{node}.putFrameBeforeExt', 1)
-            cmds.setAttr(f'{node}.periodInExt', 1)
-            cmds.setAttr(f'{node}.extensionPadding', 4)
+    #     if renderer == 'arnold':
+    #         node = 'defaultRenderGlobals'
+    #         cmds.setAttr(f'{node}.outFormatControl', 0)
+    #         cmds.setAttr(f'{node}.animation', 1)
+    #         cmds.setAttr(f'{node}.putFrameBeforeExt', 1)
+    #         cmds.setAttr(f'{node}.periodInExt', 1)
+    #         cmds.setAttr(f'{node}.extensionPadding', 4)
 
-            cmds.setAttr(f'{node}.startFrame', first_frame)
-            cmds.setAttr(f'{node}.endFrame', last_frame)
+    #         cmds.setAttr(f'{node}.startFrame', first_frame)
+    #         cmds.setAttr(f'{node}.endFrame', last_frame)
 
 
-        elif renderer =='vray':
-            node = 'vraySettings'
-            cmds.setAttr(f'{node}.animType', 1)
-            cmds.setAttr(f'{node}.animBatchOnly', 1)
+    #     elif renderer =='vray':
+    #         node = 'vraySettings'
+    #         cmds.setAttr(f'{node}.animType', 1)
+    #         cmds.setAttr(f'{node}.animBatchOnly', 1)
 
-            cmds.setAttr(f'defaultRenderGlobals.startFrame', first_frame)
-            cmds.setAttr(f'defaultRenderGlobals.endFrame', last_frame)
+    #         cmds.setAttr(f'defaultRenderGlobals.startFrame', first_frame)
+    #         cmds.setAttr(f'defaultRenderGlobals.endFrame', last_frame)
 
 
     def set_render_path(self, value: str):
@@ -954,62 +1284,6 @@ class AppMain:
 
 
 
-    def set_unit(self, unit: str):
-        """ 単位を設定
-        
-        """
-        unit_dict = {
-            'centimeter': 'cm',
-            'millimeter': 'mm',
-            'meter': 'm',
-            'kilometer': 'km',
-        }
-
-        if unit in unit_dict:
-            cmds.currentUnit(linear=unit_dict[unit])
-        else:
-            raise ValueError(f'Invalid unit: {unit}')
-
-
-
-    def save_file(self, filepath: str, mkdir=False, recent=False):
-        """ ファイル保存 """
-        if mkdir:
-            _dirpath = os.path.dirname(filepath)
-            if not os.path.exists(_dirpath):
-                os.makedirs(_dirpath)
-
-        if recent:
-            self.add_recent_file(filepath)
-
-
-        cmds.file(rename=filepath)
-
-        filename, ext = os.path.splitext(filepath)
-        if ext.lower() == '.mb':
-            cmds.file(save=True, type='mayaBinary')
-        elif ext.lower() == '.ma':
-            cmds.file(save=True, type='mayaAscii')
-
-
-    def save_selection(self, filepath: str):
-        """ 選択を保存 """
-        filetype_dict = {
-            '.mb': 'mayaBinary',
-            '.ma': 'mayaAscii',
-            '.fbx': 'FBX export',
-            '.obj': 'OBJexport',
-        }
-
-        _nodes = cmds.ls(sl=True)
-        if not _nodes:
-            RuntimeError('Select any node')
-
-        _, _ext = os.path.splitext(filepath)
-        _ext = _ext.lower()
-        _filetype = filetype_dict.get(_ext)
-
-        cmds.file(filepath, force=True, type =_filetype, exportSelected=True)
 
 
     def start_end_infinity(self, node, start_frame, end_frame):

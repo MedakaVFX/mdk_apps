@@ -72,7 +72,7 @@ FILENODE_DICT = {
     'volume': 'filepath1',
 }
 
-SCRIPT_EXTS = ['.py']
+SCRIPT_EXT_LIST = ['.py']
 
 # ======================================= #
 # Get
@@ -96,6 +96,10 @@ def get_ext_list():
     """ 拡張子リストを返す"""
     return list(EXT_LIST)
 
+
+def get_filepath() -> str:
+    """ Plugin Builtin Function """
+    return hou.hipFile.path()
 
 def get_main_window():
     """ Get the Houdini main window.
@@ -122,7 +126,7 @@ def get_script_exts() -> list[str]:
     Returns:
         list[str]: スクリプト拡張子リスト
     """
-    return SCRIPT_EXTS
+    return SCRIPT_EXT_LIST
 
 
 # ======================================= #
@@ -193,6 +197,29 @@ def open_dir(filepath):
 
         else:
             subprocess.Popen(["xdg-open", _filepath])
+
+
+def open_folder(value: str):
+    """
+    フォルダを開く
+    """
+    _filepath = pathlib.Path(value)
+    OS_NAME = platform.system()
+
+    if _filepath.exists():
+        if _filepath.is_file():
+            _filepath = _filepath.parent
+
+        if OS_NAME == 'Windows':
+            cmd = 'explorer {}'.format(str(_filepath))
+            subprocess.Popen(cmd)
+
+        elif OS_NAME == 'Darwin':
+            subprocess.Popen(['open', _filepath])
+
+        else:
+            subprocess.Popen(["xdg-open", _filepath])
+
 
 
 def open_in_explorer(filepath: str):
