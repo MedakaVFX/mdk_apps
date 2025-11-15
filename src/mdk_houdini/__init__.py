@@ -8,7 +8,7 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
-    * v0.0.1 2025-06-17 Tatsuya Yamagishi
+    * v0.0.1 2025-11-15 Tatsuya Yamagishi
         * New
 """
 
@@ -73,6 +73,72 @@ FILENODE_DICT = {
 }
 
 # ======================================= #
+# Get
+# ======================================= #
+def get_ext() -> str:
+    """ 拡張子を返す
+    * モードを判定して拡張子を返す
+    
+    Returns:
+        str: 拡張子 hip, hiplc
+    """
+    _mode = hou.applicationName()
+    _ext = EXT.get(_mode)
+
+    if _ext:
+        return _ext
+    else:
+        return '.hip'
+    
+def get_ext_list():
+    """ 拡張子リストを返す"""
+    return list(EXT_LIST)
+
+
+def get_main_window():
+    """ Get the Houdini main window.
+
+    * Reference from: https://russell-vfx.com/blog/2020/8/20/main-window
+
+    Returns:
+        PySide2.QtWidgets.QWidget: 'QWidget' Houdini main window.
+    """
+    return hou.qt.mainWindow()
+
+# ======================================= #
+# Set
+# ======================================= #
+def set_fps(value: float):
+    """ フレームレートを設定 """
+    hou.setFps(int(value+0.05))
+
+def set_framerange(head_in: int, cut_in: int, cut_out: int, tail_out: int):
+    """ フレームレンジを設定
+    
+    Args:
+        head_in (int): ヘッドイン
+        cut_in (int): カットイン
+        cut_out (int): カットアウト
+        tail_out (int): テイルアウト
+    """
+    hou.playbar.setPlaybackRange(cut_in, cut_out)     # 再生範囲
+    hou.playbar.setFrameRange(head_in, tail_out)
+
+def set_unit(unit: str):
+    """ 単位を設定
+
+    * houdiniは単位設定がないのでpass
+    
+    """
+    unit_dict = {
+        'centimeter': 0.01,
+        'millimeter': 0.001,
+        'meter': 1.0,
+        'kilometer': 1000.0,
+    }
+    
+
+# ======================================= #
 # Functins
 # ======================================= #
 def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=None, filetype='jpg'):
@@ -87,23 +153,7 @@ def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=Non
     raise RuntimeError('未実装')
 
 
-def open_dir():
-    """ Plugin Builtin Function """
-    _nodes = self.get_selected_nodes()
-
-    if _nodes:
-        raise NotImplementedError('未実装')
-    else:
-        _filepath = get_filepath()
-        open_folder(_filepath)
-
-
-def open_file(self, filepath, recent=False):
-    """ Plugin Builtin Function """
-    raise NotImplementedError('未実装')
-
-
-def open_folder(filepath):
+def open_dir(filepath):
     """
     フォルダを開く
     """
@@ -125,7 +175,6 @@ def open_folder(filepath):
             subprocess.Popen(["xdg-open", _filepath])
 
 
-
 def open_in_explorer(filepath: str):
     """
     Explorerでフォルダを開く
@@ -145,7 +194,16 @@ def open_in_explorer(filepath: str):
             subprocess.Popen(["xdg-open", filepath])
     else:
         raise FileNotFoundError(f'File is not found.')
-        
+
+
+def save_file(filepath: str):
+    """ Plugin Builtin Function
+    
+    * 名前を付けて保存
+
+    """
+    hou.hipFile.save(file_name=filepath, save_to_recent_files=True)
+
 # ======================================= #
 # Class
 # ======================================= #
@@ -209,24 +267,8 @@ class AppMain:
         _mode = hou.applicationName()
         
         return EXT_DICT[_mode]
-        
-
-    def get_ext(self, key: str = None) -> str:
-        """ 拡張子を返す 
-        
-        """
-        _mode = hou.applicationName()
-        _ext = EXT.get(_mode)
-
-        if _ext:
-            return _ext
-        else:
-            return '.hip'
             
 
-    def get_ext_list(self):
-        """ 拡張子リストを返す"""
-        return list(EXT_LIST)
     
 
     def get_filepath(self) -> str:
@@ -246,16 +288,6 @@ class AppMain:
 
         return head_in, cut_in, cut_out, tail_out
     
-
-    def get_main_window(self):
-        """ Get the Houdini main window.
-
-        * Reference from: https://russell-vfx.com/blog/2020/8/20/main-window
-    
-        Returns:
-            PySide2.QtWidgets.QWidget: 'QWidget' Houdini main window.
-        """
-        return hou.qt.mainWindow()
     
 
     def get_network_pane(self, cursor=True, node=None, multiple=False):
@@ -430,36 +462,36 @@ class AppMain:
         return FILE_FILTER_VBD.match(filepath)
     
 
-    # def open_dir(self):
-    #     print('MDK | Open Dir')
+    def open_dir(self):
+        print('MDK | Open Dir')
 
-    #     nodes = hou.selectedNodes()
+        nodes = hou.selectedNodes()
 
-    #     if len(nodes)==0:
-    #         _filepath = hou.hipFile.path()
-    #         _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
+        if len(nodes)==0:
+            _filepath = hou.hipFile.path()
+            _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
 
-    #         print(f'MDK | File = {_filepath}')
+            print(f'MDK | File = {_filepath}')
             
-    #         if os.path.exists(_filepath):
-    #             open_in_explorer(_filepath)
+            if os.path.exists(_filepath):
+                open_in_explorer(_filepath)
 
-    #     else:
-    #         for node in nodes:
-    #             filepath_list = []
-    #             node_type = node.type().name()
+        else:
+            for node in nodes:
+                filepath_list = []
+                node_type = node.type().name()
 
-    #             print(f'MDK | Nodetype = {node_type}')
+                print(f'MDK | Nodetype = {node_type}')
 
-    #             if node_type in sorted(FILENODE_DICT):
-    #                 key = FILENODE_DICT.get(node_type)
-    #                 filepath_list.append(node.parm(key).eval())
+                if node_type in sorted(FILENODE_DICT):
+                    key = FILENODE_DICT.get(node_type)
+                    filepath_list.append(node.parm(key).eval())
                 
-    #             print(filepath_list)
+                print(filepath_list)
 
-    #             for _filepath in filepath_list:
-    #                 _filepath = _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
-    #                 open_dir(_filepath)
+                for _filepath in filepath_list:
+                    _filepath = _filepath.replace(':SDF_FORMAT_ARGS:format=usda', '')
+                    open_dir(_filepath)
 
 
 
@@ -467,14 +499,6 @@ class AppMain:
     def optimize_name(self, value: str):
         return re.sub('[.]', '_', str(value))
 
-
-    def save_file(self, filepath):
-        """ Plugin Builtin Function
-        
-        * 名前を付けて保存
-
-        """
-        hou.hipFile.save(file_name=filepath, save_to_recent_files=True)
 
 
     def save_selection(self, filepath: str):
@@ -491,29 +515,3 @@ class AppMain:
 
         _root_node.saveItemsToFile(_nodes, filepath)
 
-
-    def set_fps(self, value: float):
-        hou.setFps(int(value+0.05))
-
-
-    def set_framerange(self, headin: int, cutin: int, cutout: int, tailout: int):
-        """ フレームレンジを設定 """
-        hou.playbar.setPlaybackRange(cutin, cutout)     # 再生範囲
-        hou.playbar.setFrameRange(headin, tailout)
-
-
-
-    def set_unit(self, unit: str):
-        """ 単位を設定
-
-        * houdiniは単位設定がないのでpass
-        
-        """
-        unit_dict = {
-            'centimeter': 0.01,
-            'millimeter': 0.001,
-            'meter': 1.0,
-            'kilometer': 1000.0,
-        }
-
-        self._unit_scale = unit_dict.get(unit)

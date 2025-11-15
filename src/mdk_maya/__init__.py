@@ -9,11 +9,10 @@ Info:
 
     
 Release Note:
-    * v0.0.3 [v0.0.3] 2025-10-21 Tatsuya Yamagishi
+    * v0.0.3 (v0.0.3) 2025-06-24 Tatsuya Yamagishi
         * added: apply_alembic_cache()
         * added: set_aperture_size()
         * added: set_unit()
-        * Added: get_main_window()
 
         
     * v0.0.2 (v0.0.2) 2025-02-03 Tatsuya Yamagishi
@@ -41,10 +40,8 @@ import sys
 #=======================================#
 # Import Maya Modules
 #=======================================#
-from cur.shinobi.snb_libs.env import get_filepath
 import maya.cmds as cmds
 import maya.mel as mel
-from maya import OpenMayaUI as omui
 
 from maya.app.renderSetup.model import selector
 from maya.app.renderSetup.model import renderLayer
@@ -63,7 +60,7 @@ try:
 except:
     from qtpy import QtCore, QtGui, QtWidgets
 
-
+from maya import OpenMayaUI as omui 
 
 try:
     from shiboken2 import wrapInstance
@@ -116,25 +113,10 @@ FILE_FILTER_RAW = re.compile(r'.+\.(cr2|cr3|dng|CR2|CR3|DNG)')
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 FILE_FILTER_TEXT = re.compile(r'.+\.(doc|txt|text|json|py|usda|nk|sh|zsh|bat)')
 
-FILE_NODES_LIST = ['filetexture', ]
-SCRIPT_EXT_LIST = ['.py', '.mel', '.bat', '.sh', '.zsh']
 
 #=======================================#
 # Functions
 #=======================================#
-def add_recent_file(filepath: str):
-    filepath = filepath.replace('\\','/') 
-    _filename, _ext = os.path.splitext(filepath)
-    _ext = _ext.lower()
-
-    if _ext == '.ma':
-        cmd = 'addRecentFile( "{}", "mayaAscii")'.format(filepath)
-        mel.eval(cmd)
-    elif _ext == '.mb':
-        cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
-        mel.eval(cmd)
-
-
 def create_playblast(
             filepath: str,
             size: list|tuple=None,
@@ -175,9 +157,8 @@ def exec_script(filepath):
     if FILE_FILTER_SCRIPT.match(filepath):
         if filepath.lower().endswith('.py'):
             exec_python_file(filepath, globals())
-        elif filepath.lower().endswith('.mel'):
-            mel.eval(filepath)
-    
+    else:
+        raise TypeError()
     
 
 def exec_python_file(filepath, globals=None, locals=None):
@@ -189,141 +170,6 @@ def exec_python_file(filepath, globals=None, locals=None):
     })
     with open(filepath, 'rb') as file:
         exec(compile(file.read(), filepath, 'exec'), globals, locals)
-
-def get_ext(self) -> str:
-    """ 拡張子を返す 
-    
-    """
-    return '.ma'
-
-def get_main_window():
-    """ Mayaのメインウィンドウを取得 
-    
-    """
-    ptr = omui.MQtUtil.mainWindow()
-
-    if ptr is not None:
-        return wrapInstance(int(ptr), QtWidgets.QWidget)
-
-def get_script_exts() -> list:
-    """ スクリプト拡張子リストを取得 """
-    return SCRIPT_EXT_LIST
-
-def get_selected_nodes(long=True) -> list[str]:
-    """ 選択しているノードを返す
-
-    Args:
-        long(bool): True: フルパス, False: ノード名のみ
-    
-    Returns:
-        list[str]: 選択しているノードリスト
-    """
-    return cmds.ls(sl=True, long=long)
-
-
-def import_file(filepath, namespace=None):    
-    if os.path.exists(filepath):
-        file, ext = os.path.splitext(filepath)
-
-        if namespace is None:
-            if is_usd(filepath):
-                # pm.importFile(filepath, type='USD Import',preserveReferences=True)
-                return cmds.file(
-                        filepath,
-                        i=True,
-                        type='USD Import',
-                        namespace=namespace,
-                        preserveReferences=True)
-            
-            elif is_image(filepath):
-                import_texture(filepath)
-
-            elif is_maya(filepath):
-                # pm.importFile(filepath, preserveReferences=True)
-                return cmds.file(filepath, i=True)
-            else:
-                raise TypeError('MDK | Not supported file type')
-            
-        else:
-            currentNs = cmds.namespaceInfo(cur=True)
-
-            if not cmds.namespace(ex=':{}'.format(namespace)):
-                cmds.namespace(add=':{}'.format(namespace))
-
-            cmds.namespace(set=':{}'.format(namespace))
-
-            return cmds.file(filepath, i=True, mergeNamespacesOnClash=False, namespace=namespace)
-                    
-    else:
-        raise FileNotFoundError()
-
-
-def import_usd(filepath: str, namespace: str=None):
-    cmds.file(filepath, i=True, type='USD Import', preserveReferences=True)
-
-
-def is_image(filepath: str) -> tuple:
-    """ イメージファイル判定 """
-    return FILE_FILTER_IMAGE.match(filepath)
-
-def is_maya(filepath: str) -> tuple:
-    """ Mayaファイル判定 """
-    return FILE_FILTER_MAYA.match(filepath)
-
-def is_usd(filepath: str) -> tuple:
-    """ USDファイル判定 """
-    return FILE_FILTER_USD.match(filepath)
-
-def open_dir():
-    """ Plugin Builtin Function """
-    _nodes = get_selected_nodes()
-    if _nodes:
-        for _node in _nodes:
-            if cmds.nodeType(_node) in FILE_NODES_LIST:
-                if cmds.nodeType(_node) == 'file':
-                    _filepath = cmds.getAttr(f'{_node}.fileTextureName')
-                    open_in_explorer(_filepath)
-            
-    else:
-        _filepath = get_filepath()
-        if _filepath:
-            open_folder(_filepath)
-
-
-def open_file(filepath, recent=False):
-    """ Plugin Builtin Function """
-    raise NotImplementedError('未実装')
-
-
-def open_folder(filepath):
-    """
-    フォルダを開く
-    """
-    _filepath = pathlib.Path(filepath)
-    OS_NAME = platform.system()
-
-    if _filepath.exists():
-        if _filepath.is_file():
-            _filepath = _filepath.parent
-
-        if OS_NAME == 'Windows':
-            cmd = 'explorer {}'.format(str(_filepath))
-            subprocess.Popen(cmd)
-
-        elif OS_NAME == 'Darwin':
-            subprocess.Popen(['open', _filepath])
-
-        else:
-            subprocess.Popen(["xdg-open", _filepath])
-
-
-
-def open_file(filepath, recent=False):
-    """ Plugin Builtin Function """
-    if recent:
-        add_recent_file(filepath)
-
-    cmds.file(filepath, open=True, force=True)
 
 
 def open_in_explorer(filepath: str):
@@ -346,35 +192,7 @@ def open_in_explorer(filepath: str):
     else:
         raise FileNotFoundError(f'File is not found.')
 
-def set_framerange(headin: int, cutin: int, cutout: int, tailout: int):
-    cmds.playbackOptions(animationStartTime=headin, animationEndTime=tailout)
-    cmds.playbackOptions(minTime=headin, maxTime=tailout)
-    cmds.currentTime(headin)
 
-    
-def save_selection(filepath: str):
-    """ 選択を保存
-    
-    Args:
-        filepath (str): 保存するファイルのパス
-    """
-    filetype_dict = {
-        '.mb': 'mayaBinary',
-        '.ma': 'mayaAscii',
-        '.fbx': 'FBX export',
-        '.obj': 'OBJexport',
-    }
-
-    _nodes = cmds.ls(sl=True)
-    if not _nodes:
-        RuntimeError('Select any node')
-
-    _, _ext = os.path.splitext(filepath)
-    _ext = _ext.lower()
-    _filetype = filetype_dict.get(_ext)
-
-    cmds.file(filepath, force=True, type =_filetype, exportSelected=True)
-    
 # ======================================= #
 # Class
 # ======================================= #
@@ -402,6 +220,20 @@ class AppMain:
         print(f'Apply Alembic Cache: {filepath}')
         cmds.AbcImport(filepath, mode="import", connect=_selection[0])
         # cmds.AbcImport(filepath, mode="import", rpr=_selection[0], merge=True)
+
+
+
+    def add_recent_file(self, filepath: str):
+        filepath = filepath.replace('\\','/') 
+        _filename, _ext = os.path.splitext(filepath)
+        _ext = _ext.lower()
+
+        if _ext == '.ma':
+            cmd = 'addRecentFile( "{}", "mayaAscii")'.format(filepath)
+            mel.eval(cmd)
+        elif _ext == '.mb':
+            cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
+            mel.eval(cmd)
 
 
 
@@ -741,14 +573,14 @@ class AppMain:
             
         return _plane
 
-    # def get_main_window(self):
-    #     """ Mayaのメインウィンドウを取得 
+    def get_main_window(self):
+        """ Mayaのメインウィンドウを取得 
         
-    #     """
-    #     ptr = omui.MQtUtil.mainWindow()
+        """
+        ptr = omui.MQtUtil.mainWindow()
 
-    #     if ptr is not None:
-    #         return wrapInstance(int(ptr), QtWidgets.QWidget)
+        if ptr is not None:
+            return wrapInstance(int(ptr), QtWidgets.QWidget)
         
 
     def get_render(self) -> str:
@@ -774,6 +606,16 @@ class AppMain:
 
         
 
+    def get_selected_nodes(self, long=True) -> list[str]:
+        """ 選択しているノードを返す
+
+        Args:
+            long(bool): True: フルパス, False: ノード名のみ
+        
+        Returns:
+            list[str]: 選択しているノードリスト
+        """
+        return cmds.ls(sl=True, long=long)
 
 
 
@@ -846,7 +688,13 @@ class AppMain:
         return FILE_FILTER_FBX.match(filepath)
         
 
-
+    def is_image(self, filepath: str) -> tuple:
+        """ イメージファイル判定 """
+        return FILE_FILTER_IMAGE.match(filepath)
+       
+    def is_maya(self, filepath: str) -> tuple:
+        """ Mayaファイル判定 """
+        return FILE_FILTER_MAYA.match(filepath)
 
        
     def is_obj(self, filepath: str) -> tuple:
@@ -854,7 +702,9 @@ class AppMain:
         return FILE_FILTER_OBJ.match(filepath)
 
     
-
+    def is_usd(self, filepath: str) -> tuple:
+        """ USDファイル判定 """
+        return FILE_FILTER_USD.match(filepath)
     
 
     def open_dir(self):
@@ -882,6 +732,13 @@ class AppMain:
                         open_in_explorer(_filepath)
 
 
+
+    def open_file(self, filepath, recent=False):
+        """ Plugin Builtin Function """
+        if recent:
+            self.add_recent_file(filepath)
+
+        cmds.file(filepath, open=True, force=True)
         
 
     def reference_file(self, filepath: str, namespace: str=None):
@@ -965,7 +822,10 @@ class AppMain:
         cmds.currentUnit(time=fps_dict[value])
 
 
-
+    def set_framerange(self, headin: int, cutin: int, cutout: int, tailout: int):
+        cmds.playbackOptions(animationStartTime=headin, animationEndTime=tailout)
+        cmds.playbackOptions(minTime=headin, maxTime=tailout)
+        cmds.currentTime(headin)
 
 
 
@@ -1103,6 +963,25 @@ class AppMain:
         elif ext.lower() == '.ma':
             cmds.file(save=True, type='mayaAscii')
 
+
+    def save_selection(self, filepath: str):
+        """ 選択を保存 """
+        filetype_dict = {
+            '.mb': 'mayaBinary',
+            '.ma': 'mayaAscii',
+            '.fbx': 'FBX export',
+            '.obj': 'OBJexport',
+        }
+
+        _nodes = cmds.ls(sl=True)
+        if not _nodes:
+            RuntimeError('Select any node')
+
+        _, _ext = os.path.splitext(filepath)
+        _ext = _ext.lower()
+        _filetype = filetype_dict.get(_ext)
+
+        cmds.file(filepath, force=True, type =_filetype, exportSelected=True)
 
 
     def start_end_infinity(self, node, start_frame, end_frame):

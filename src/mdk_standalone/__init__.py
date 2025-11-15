@@ -8,9 +8,10 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
-    * v0.1.0 2025-08-12 Tatsuya Yamagishi
+    * v0.1.0 2025-11-15 Tatsuya Yamagishi
         * Changed : メジャーアップデート
           * 関数メインの攻勢に変更
+
     * v0.0.1 2025-01-31 Tatsuya Yamagishi
         * New
 """
@@ -32,6 +33,8 @@ if os.environ.get('MDK_DEBUG'):
     print(f'MDK | {NAME} {VERSION}')
     print('MDK | ---------------------------')
 
+
+
 # ======================================= #
 # Settings
 # ======================================= #
@@ -52,42 +55,32 @@ EXT_DICT = {
 
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 
+
 # ======================================= #
-# Functions
+# Get
 # ======================================= #
 def get_ext() -> str:
     """ 拡張子を取得 """
     return '.dat'
 
-def get_filepath() -> str:
-    """現在開いているファイルパスを取得"""
+def get_ext_list():
+    """ 拡張子リストを返す"""
+    return list(EXT_LIST)
+
+def get_main_window():
+    """ Get the standalone main window.
+
+    Returns:
+        None: Standalone does not have main window.
+    """
     return None
 
-
-def get_script_exts() -> list:
-    """ スクリプト拡張子リストを取得 """
-    return ['.py']
-
-def get_selected_nodes() -> list[str]:
-    """ 選択しているノードを取得 """
-    return ['root', 'root/geo']
-
-
-def save_file(filepath: str, value: str) -> None:
-    """ ファイルを保存 """
-    with open(filepath, 'w') as f:
-        f.write(value)
-
-def save_selection(filepath: str):
-    """ 選択を保存 """
-    _nodes = get_selected_nodes()
-
-    _filepath = pathlib.Path(filepath)
-    _filepath.write_text(str(_nodes), encoding='utf8')
-
-
+# ======================================= #
+# Set
+# ======================================= #
 def set_fps(value: str):
     print(f'MDK | fps = {value}')
+
 
 def set_frame_range(value: tuple):
     """ フレームレンジをセット """
@@ -108,6 +101,17 @@ def set_renderer(value: str):
 def set_unit(value: str):
     """ 単位をセット """
     print(f'MDK | unit = {value}')
+
+# ======================================= #
+# Functions
+# ======================================= #
+def save_file(filepath: str, value: str) -> None:
+    """ ファイルを保存 """
+    with open(filepath, 'w') as f:
+        f.write(value)
+
+
+
 
 
 # ======================================= #
@@ -151,7 +155,10 @@ def set_unit(value: str):
 #             return pathlib.Path(_filepath).name
 
     
-
+#     def get_filepath(self) -> str:
+#         """現在開いているファイルパスを取得"""
+#         return None
+    
 #     def get_fps(self) -> float:
 #         return 24.000
     
@@ -163,7 +170,9 @@ def set_unit(value: str):
 #         """ レンダーサイズを取得 """
 #         return (1920, 1080)
 
-
+#     def get_selected_nodes(self) -> list[str]:
+#         """ 選択しているノードを取得 """
+#         return ['root', 'root/geo']
     
 #     def set_aperture_size(self, values: tuple[int]):
 #         print(f'MDK | aperture_size = {values}')
@@ -271,4 +280,9 @@ def set_unit(value: str):
 #         _filepath.write_text('Medaka', encoding='utf8')
 
 
+#     def save_selection(self, filepath: str):
+#         """ 選択を保存 """
+#         _nodes = self.get_selected_nodes()
 
+#         _filepath = pathlib.Path(filepath)
+#         _filepath.write_text(str(_nodes), encoding='utf8')
