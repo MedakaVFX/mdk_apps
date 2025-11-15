@@ -4,12 +4,13 @@
 
 Info:
     * Created : v0.0.1 2024-11-15 Tatsuya YAMAGISHI
+    * Client : Maya 2026
     * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
 
     
 Release Note:
-    * v0.0.3 (v0.0.3) 2025-06-24 Tatsuya Yamagishi
+    * v0.0.3 (v0.0.3) 2025-11-15 Tatsuya Yamagishi
         * added: apply_alembic_cache()
         * added: set_aperture_size()
         * added: set_unit()
@@ -134,6 +135,13 @@ def get_ext_list() -> list[str]:
     """ 拡張子リストを返す"""
     return list(EXT_LIST)
 
+def get_selected_nodes() -> list[str]:
+    """ 選択しているノードを取得
+    
+    Returns:
+        list[str]: 選択しているノードリスト
+    """
+    return cmds.ls(sl=True)
 
 def get_script_exts() -> list[str]:
     """ スクリプト拡張子リストを取得

@@ -107,6 +107,15 @@ def get_main_window():
     """
     return hou.qt.mainWindow()
 
+
+def get_selected_nodes() -> list:
+    """ 選択しているノードを取得
+    
+    Returns:
+        list: 選択しているノードリスト
+    """
+    return hou.selectedNodes()
+
 def get_script_exts() -> list[str]:
     """ スクリプト拡張子リストを取得
     
