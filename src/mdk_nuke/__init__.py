@@ -57,6 +57,8 @@ FILE_NODES_LIST = ['Read', 'Write', 'ReadGeo2', ]
 
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 
+SCRIPT_EXTS = ['.py', '.nk']
+
 
 # ======================================= #
 # Get
@@ -94,6 +96,14 @@ def get_main_window():
         if widget.metaObject().className() == "Foundry::UI::DockMainWindow":
             return widget
     return None
+
+def get_script_exts() -> list[str]:
+    """ スクリプト拡張子リストを取得
+    
+    Returns:
+        list[str]: スクリプト拡張子リスト
+    """
+    return SCRIPT_EXTS
 
 # ======================================= #
 # Functins
