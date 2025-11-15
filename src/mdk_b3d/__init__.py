@@ -132,22 +132,7 @@ def import_usd(filepath: str, scale: float = 0.01):
             scale=scale,)
 
 
-def open_dir():
-    """ Plugin Builtin Function """
-    _nodes = self.get_selected_nodes()
-
-    if _nodes:
-        raise NotImplementedError('未実装')
-    else:
-        _filepath = get_filepath()
-        open_folder(_filepath)
-
-def open_file(self, filepath, recent=False):
-    """ Plugin Builtin Function """
-    bpy.ops.wm.open_mainfile(filepath=filepath)  
-
-
-def open_folder(filepath):
+def open_dir(filepath):
     """
     フォルダを開く
     """
