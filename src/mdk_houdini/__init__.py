@@ -72,6 +72,8 @@ FILENODE_DICT = {
     'volume': 'filepath1',
 }
 
+SCRIPT_EXTS = ['.py']
+
 # ======================================= #
 # Get
 # ======================================= #
@@ -104,6 +106,15 @@ def get_main_window():
         PySide2.QtWidgets.QWidget: 'QWidget' Houdini main window.
     """
     return hou.qt.mainWindow()
+
+def get_script_exts() -> list[str]:
+    """ スクリプト拡張子リストを取得
+    
+    Returns:
+        list[str]: スクリプト拡張子リスト
+    """
+    return SCRIPT_EXTS
+
 
 # ======================================= #
 # Set
