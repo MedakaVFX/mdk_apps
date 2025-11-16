@@ -55,6 +55,7 @@ EXT_DICT = {
 
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 
+SCRIPT_EXT_LIST = ['.py']
 
 # ======================================= #
 # Get
@@ -74,6 +75,14 @@ def get_main_window():
         None: Standalone does not have main window.
     """
     return None
+def get_script_exts() -> list[str]:
+    """ スクリプト拡張子リストを取得
+    
+    Returns:
+        list[str]: スクリプト拡張子リスト
+    """
+    return SCRIPT_EXT_LIST
+
 
 # ======================================= #
 # Set
