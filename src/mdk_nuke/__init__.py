@@ -213,7 +213,10 @@ def open_dir(filepath) -> None:
         else:
             subprocess.Popen(["xdg-open", _filepath])
 
-
+def open_file(filepath):
+    """ Plugin Builtin Function """
+    nuke.scriptOpen(filepath)
+    
 def open_in_explorer(filepath: str):
     """
     Explorerでフォルダを開く
@@ -295,10 +298,6 @@ class AppMain:
 
                     open_dir(filepath)
 
-
-    def open_file(self, filepath):
-        """ Plugin Builtin Function """
-        self.file.open_file(self, filepath)
 
 
     def set_aperture_size(self, width: int, height: int):
