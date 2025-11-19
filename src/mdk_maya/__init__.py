@@ -135,16 +135,22 @@ UNIT_MAP = {
 
 
 
-
-
 # ======================================= #
 # Get
 # ======================================= #
-def get_ext(self) -> str:
+def get_ext() -> str:
     """ 拡張子を返す 
     
     """
     return '.ma'
+
+def get_filepath() -> str:
+    """ 現在のシーンファイルパスを取得 
+    
+    Returns:
+        str: ファイルパス
+    """
+    return cmds.file(q=True, sn=True)
 
 def get_main_window():
     """ Mayaのメインウィンドウを取得 
@@ -276,7 +282,7 @@ def set_unit(unit: str):
     else:
         raise ValueError(f'Invalid unit: {unit}')
     
-    
+
 # ======================================= #
 # Functions
 # ======================================= #
