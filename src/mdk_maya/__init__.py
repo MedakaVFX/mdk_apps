@@ -144,6 +144,14 @@ def get_ext() -> str:
     """
     return '.ma'
 
+
+def get_filename() -> str:
+    """現在開いているファイル名を取得"""
+    _filepath = get_filepath()
+
+    if _filepath:
+        return pathlib.Path(_filepath).name
+    
 def get_filepath() -> str:
     """ 現在のシーンファイルパスを取得 
     
@@ -929,17 +937,7 @@ class AppMain:
             return pathlib.Path(_filepath).stem
 
 
-    def get_filename(self) -> str:
-        """現在開いているファイル名を取得"""
-        _filepath = self.get_filepath()
 
-        if _filepath:
-            return pathlib.Path(_filepath).name
-        
-    
-
-    def get_filepath(self) -> str:
-        return cmds.file(q=True, sceneName=True)
     
 
     def get_fps(self) -> int:

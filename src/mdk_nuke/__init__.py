@@ -8,8 +8,8 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
-    * v0.0.1 2025-08-26 Tatsuya Yamagishi
-        * added: new
+    * v0.0.1 [v0.1.0] 2025-12-01 Tatsuya Yamagishi
+        * Added: new
 """
 
 VERSION = 'v0.0.1'
@@ -58,6 +58,7 @@ FILE_NODES_LIST = ['Read', 'Write', 'ReadGeo2', ]
 FILE_FILTER_SCRIPT = re.compile(r'.+\.(py)')
 
 SCRIPT_EXT_LIST = ['.py', '.nk']
+
 
 
 # ======================================= #
@@ -123,7 +124,7 @@ def get_script_exts() -> list[str]:
 # Set
 # ======================================= #
 
-def set_current_time(value: int):
+def set_current_frame(value: int):
     """ 現在の時間を設定
     Args:
         value (int): フレーム番号
