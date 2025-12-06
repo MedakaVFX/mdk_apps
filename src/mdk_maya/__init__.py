@@ -306,7 +306,36 @@ def add_recent_file(filepath: str):
         cmd = 'addRecentFile( "{}", "mayaBinary")'.format(filepath)
         mel.eval(cmd)
 
+def clear_plugins():
+    """ 不要なプラグインデータを削除 """
+    print('MDK | [Clear Plugins]')
 
+    plugs_ = cmds.unknownPlugin(q=True, list=True)
+
+    if not plugs_ is None:
+        plugs_.sort()
+
+        for plug_ in plugs_:
+            try:
+                cmds.unknownPlugin(plug_, remove=True)
+            except Exception as error:
+                print('MDK | === error ===')
+                print('type:' + str(type(error)))
+                print('args:' + str(error.args))
+
+
+    nodes_ = cmds.ls(type='unknown')
+    if nodes_:
+        for node_ in nodes_:
+            try:
+                cmds.delete(node_)
+                print('//Delete unknownNode: ' + node_)
+
+            except Exception as error:
+                print('MDK | === error ===')
+                print('type:' + str(type(error)))
+                print('args:' + str(error.args))
+                
 def create_playblast(
             filepath: str,
             size: list|tuple=None,
@@ -343,6 +372,13 @@ def create_playblast(
         )
     
 
+def delete_unused_nodes():
+    """ 未使用ノードを削除 """
+    print('MDK | [Delete Unused Nodes]')
+    print('mel.eval("MLdeleteUnused;")')
+
+    mel.eval('MLdeleteUnused;')
+    
 def exec_script(filepath):
     if FILE_FILTER_SCRIPT.match(filepath):
         if filepath.lower().endswith('.py'):
@@ -652,37 +688,6 @@ class AppMain:
         cmds.AbcImport(filepath, mode="import", connect=_selection[0])
         # cmds.AbcImport(filepath, mode="import", rpr=_selection[0], merge=True)
 
-
-
-    def clear_plugins(self):
-        """ 不要なプラグインデータを削除 """
-        print('MDK | [Clear Plugins]')
-
-        plugs_ = cmds.unknownPlugin(q=True, list=True)
-
-        if not plugs_ is None:
-            plugs_.sort()
-
-            for plug_ in plugs_:
-                try:
-                    cmds.unknownPlugin(plug_, remove=True)
-                except Exception as error:
-                    print('MDK | === error ===')
-                    print('type:' + str(type(error)))
-                    print('args:' + str(error.args))
-
-
-        nodes_ = cmds.ls(type='unknown')
-        if nodes_:
-            for node_ in nodes_:
-                try:
-                    cmds.delete(node_)
-                    print('//Delete unknownNode: ' + node_)
-
-                except Exception as error:
-                    print('MDK | === error ===')
-                    print('type:' + str(type(error)))
-                    print('args:' + str(error.args))
 
 
                     
