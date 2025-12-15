@@ -8,12 +8,14 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
-    * v0.1.0 2025-11-15 Tatsuya Yamagishi
-        * Changed : メジャーアップデート
-          * 関数メインの攻勢に変更
+    * v0.1.0 [v0.1.0] 2025-12-14 Tatsuya Yamagishi
+        * added: get_fps()
+        * added: get_render_size()
+        * changed : メジャーアップデート
+          * 関数メインの構成に変更
 
     * v0.0.1 2025-01-31 Tatsuya Yamagishi
-        * New
+        * new
 """
 
 VERSION = 'v0.1.0'
@@ -68,6 +70,18 @@ def get_ext_list():
     """ 拡張子リストを返す"""
     return list(EXT_LIST)
 
+def get_filepath() -> str:
+    """現在開いているファイルパスを取得"""
+    return __file__
+
+def get_fps() -> float:
+    """ FPSを取得
+    
+    Returns:
+        float: フレームレート
+    """
+    return 24.0
+
 def get_main_window():
     """ Get the standalone main window.
 
@@ -75,6 +89,15 @@ def get_main_window():
         None: Standalone does not have main window.
     """
     return None
+
+def get_render_size() -> tuple[int, int]:
+    """ レンダーサイズを取得
+    
+    Returns:
+        tuple[int, int]: レンダーサイズ(width, height)
+    """
+    return (1920, 1080)
+
 def get_script_exts() -> list[str]:
     """ スクリプト拡張子リストを取得
     

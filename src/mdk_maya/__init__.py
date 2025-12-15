@@ -9,11 +9,12 @@ Info:
 
     
 Release Note:
-    * v0.0.3 [v0.0.3] 2025-10-21 Tatsuya Yamagishi
+    * v0.0.3 [v0.1.0] 2025-12-14 Tatsuya Yamagishi
         * added: apply_alembic_cache()
+        * added: get_render_size()
         * added: set_aperture_size()
         * added: set_unit()
-        * Added: get_main_window()
+        * added: get_main_window()
 
         
     * v0.0.2 (v0.0.2) 2025-02-03 Tatsuya Yamagishi
@@ -160,6 +161,20 @@ def get_filepath() -> str:
     """
     return cmds.file(q=True, sn=True)
 
+def get_fps() -> int:
+    fps_dict = {
+        "game": 15,
+        "film": 24,
+        "pal": 25,
+        "ntsc": 30,
+        "show": 48,
+        "palf": 50,
+        "ntscf": 60
+    }
+
+    fps = cmds.currentUnit(query=True, time=True)
+    return fps_dict.get(fps)
+
 def get_main_window():
     """ Mayaのメインウィンドウを取得 
     
@@ -174,8 +189,16 @@ def get_render() -> str:
     """ 現在のレンダラーを取得 """
     return cmds.getAttr('defaultRenderGlobals.currentRenderer')
 
-        
+def get_render_size() -> tuple[int, int]:
+    """ レンダーサイズを取得
+    
+    Returns:
+        tuple[int, int]: レンダーサイズ(width, height)
+    """
+    _width = cmds.getAttr("defaultResolution.width")
+    _height = cmds.getAttr("defaultResolution.height")
 
+    return (_width, _height)
 
 def get_script_exts() -> list:
     """ スクリプト拡張子リストを取得 """
@@ -195,6 +218,43 @@ def get_selected_nodes(long=True) -> list[str]:
 # ======================================= #
 # Set
 # ======================================= #
+def set_camera_imageplane(filepath: str, colorspace: str='sRGB') -> str:
+    """ カメラにイメージプレーンを設定 """
+    _nodes = get_selected_nodes()
+
+    if not _nodes:
+        raise RuntimeError('Select any camera node')
+
+    _camera = _nodes[0]
+
+    # カメラのシェイプノードを取得
+    _imageplane = cmds.listConnections(f'{_camera}.imagePlane', type='imagePlane')
+    if _imageplane:
+        _plane = _imageplane[0]
+
+    else:
+        _imageplane = cmds.imagePlane(camera=_camera)
+        _plane = _imageplane[1]
+
+    # Fileノードにテクスチャを設定
+    cmds.setAttr(f'{_plane}.imageName', filepath, type='string')
+    
+    # Horizontal Fit
+    # 0 None
+    # 1 Fill
+    # 2 Horzontal
+    # 3 Vertical
+    # 4 Both
+    cmds.setAttr(f'{_plane}.fit', 2)
+    cmds.setAttr(f'{_plane}.useFrameExtension', 1)
+
+
+    if colorspace:
+        cmds.setAttr(f'{_plane}.ignoreColorSpaceFileRules', 1)
+        cmds.setAttr(f'{_plane}.colorSpace', colorspace, type='string')
+
+    return _plane
+
 
 def set_frame_range(head_in: int, cut_in: int, cut_out: int, tail_out: int):
     cmds.playbackOptions(animationStartTime=head_in, animationEndTime=tail_out)
@@ -945,19 +1005,7 @@ class AppMain:
 
     
 
-    def get_fps(self) -> int:
-        fps_dict = {
-            "game": 15,
-            "film": 24,
-            "pal": 25,
-            "ntsc": 30,
-            "show": 48,
-            "palf": 50,
-            "ntscf": 60
-        }
 
-        fps = cmds.currentUnit(query=True, time=True)
-        return fps_dict.get(fps)
 
 
     

@@ -77,7 +77,13 @@ def open_in_explorer(filepath: str):
     else:
         raise FileNotFoundError(f'File is not found.')
     
-
+# ======================================= #
+# Get
+# ======================================= #
+def get_filepath() -> str:
+    """現在開いているファイルパスを取得"""
+    return f'{rt.maxFilePath}/{rt.maxFileName}'
+    
 # ======================================= #
 # Class
 # ======================================= #
@@ -140,9 +146,7 @@ class AppMain:
         return list(EXT_LIST)
     
 
-    def get_filepath(self) -> str:
-        """現在開いているファイルパスを取得"""
-        return f'{rt.maxFilePath}/{rt.maxFileName}'
+
     
 
     def get_fps(self) -> int:
