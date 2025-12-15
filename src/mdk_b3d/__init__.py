@@ -3,16 +3,19 @@
 * VFX用Blender互換パッケージ
 
 Info:
-    * Created : v0.0.1 2024-11-15 Tatsuya YAMAGISHI
+    * Created : v0.0.1 2024-11-15 Tatsuya Yamagishi
     * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
+    * v0.0.2 [v0.1.0] 2025-12-15 Tatsuya Yamagishi
+        * added: get_frame_range()
+
     * v0.0.1 2024-11-15 Tatsuya Yamagishi
         * added: path
 """
 
-VERSION = 'v0.0.1'
+VERSION = 'v0.0.2'
 NAME = 'mdk_b3d'
 
 import os
@@ -88,6 +91,24 @@ def get_ext_list() -> list[str]:
 def get_filepath() -> str:
     """現在開いているファイルパスを取得"""
     return bpy.context.blend_data.filepath
+
+def get_fps() -> float:
+    """ FPSを取得
+    
+    Returns:
+        float: フレームレート
+    """
+    return bpy.context.scene.render.fps
+
+def get_frame_range() -> tuple[int, int]:
+    """ フレームレンジを取得
+    
+    Returns:
+        tuple[int, int]: フレームレンジ (start, end)
+    """
+    start = bpy.context.scene.frame_start
+    end = bpy.context.scene.frame_end
+    return (start, end)
 
 def get_selected_nodes() -> list:
     """ 選択しているノードを取得

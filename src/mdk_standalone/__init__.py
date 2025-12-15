@@ -8,6 +8,9 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
+    * v0.1.1 [v0.2.0] 2025-12-15 Tatsuya Yamagishi
+        * added: get_frame_range()
+
     * v0.1.0 [v0.1.0] 2025-12-14 Tatsuya Yamagishi
         * added: get_fps()
         * added: get_render_size()
@@ -81,6 +84,14 @@ def get_fps() -> float:
         float: フレームレート
     """
     return 24.0
+
+def get_frame_range() -> tuple[int, int]:
+    """ フレームレンジを取得
+    
+    Returns:
+        tuple[int, int]: フレームレンジ (start, end)
+    """
+    return (1001, 1200)
 
 def get_main_window():
     """ Get the standalone main window.

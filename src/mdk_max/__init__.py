@@ -3,11 +3,13 @@
 * VFX用3dsMax互換パッケージ
 
 Info:
-    * Created : v0.0.1 2024-11-15 Tatsuya YAMAGISHI
+    * Created : v0.0.1 2024-11-15 Tatsuya Yamagishi
     * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
+    * v0.0.3 [v0.0.3] 2025-12-15 Tatsuya Yamagishi
+        * added: get_frame_range
     * v0.0.2 (v0.0.2) 2025-03-31 Tatsuya Yamagishi
         * added: FILE_FILTER_SCRIPT
         * added: create_playblast
@@ -16,7 +18,7 @@ Release Note:
         * added: path
 """
 
-VERSION = 'v0.0.2'
+VERSION = 'v0.0.3'
 NAME = 'mdk_max'
 
 import os
@@ -83,7 +85,18 @@ def open_in_explorer(filepath: str):
 def get_filepath() -> str:
     """現在開いているファイルパスを取得"""
     return f'{rt.maxFilePath}/{rt.maxFileName}'
-    
+
+def get_frame_range() -> tuple[int, int]:
+    """ フレームレンジを取得
+   
+    Returns:
+        tuple[int, int]: フレームレンジ (start, end)
+    """
+    _start_frame = int(rt.animationRange.start.frame)
+    _end_frame = int(rt.animationRange.end.frame)
+
+    return (_start_frame, _end_frame)
+
 # ======================================= #
 # Class
 # ======================================= #
