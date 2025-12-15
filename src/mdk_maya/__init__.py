@@ -9,6 +9,9 @@ Info:
 
     
 Release Note:
+    * v0.0.4 [v0.2.0] 2025-12-15 Tatsuya Yamagishi
+        * added: get_frame_range()
+
     * v0.0.3 [v0.1.0] 2025-12-14 Tatsuya Yamagishi
         * added: apply_alembic_cache()
         * added: get_render_size()
@@ -26,7 +29,7 @@ Release Note:
 
 """
 
-VERSION = 'v0.0.3'
+VERSION = 'v0.0.4'
 NAME = 'mdk_maya'
 
 #=======================================#
@@ -174,6 +177,16 @@ def get_fps() -> int:
 
     fps = cmds.currentUnit(query=True, time=True)
     return fps_dict.get(fps)
+
+def get_frame_range() -> tuple[int, int]:
+    """ フレームレンジを取得
+    
+    Returns:
+        tuple[int, int]: フレームレンジ (start, end)
+    """
+    start = int(cmds.playbackOptions(q=True, min=True))
+    end = int(cmds.playbackOptions(q=True, max=True))
+    return (start, end)
 
 def get_main_window():
     """ Mayaのメインウィンドウを取得 

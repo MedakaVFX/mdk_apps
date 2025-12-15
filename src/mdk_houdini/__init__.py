@@ -3,16 +3,19 @@
 * VFX用Pythonパッケージ
 
 Info:
-    * Created : v0.0.1 2024-11-15 Tatsuya YAMAGISHI
+    * Created : v0.0.1 2024-11-15 Tatsuya Yamagishi
     * Coding : Python 3.12.4 & PySide6
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
+    * v0.0.2 [v0.0.2] 2025-12-15 Tatsuya Yamagishi
+        * added: get_frame_range()
+
     * v0.0.1 2025-11-15 Tatsuya Yamagishi
         * New
 """
 
-VERSION = 'v0.0.1'
+VERSION = 'v0.0.2'
 NAME = 'mdk_houdini'
 
 import os
@@ -108,6 +111,15 @@ def get_fps() -> float:
 def get_filepath() -> str:
     """ Plugin Builtin Function """
     return hou.hipFile.path()
+
+def get_frame_range() -> tuple[int, int]:
+    """ フレームレンジを取得
+    
+    Returns:
+        tuple[int, int]: フレームレンジ (start, end)
+    """
+    start, end = hou.playbar.frameRange()
+    return (int(start), int(end))
 
 def get_main_window():
     """ Get the Houdini main window.

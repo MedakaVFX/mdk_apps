@@ -8,11 +8,14 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
+    * v0.0.2 [v0.2.0] 2025-12-15 Tatsuya Yamagishi
+        * added: get_frame_range()
+
     * v0.0.1 [v0.1.0] 2025-12-14 Tatsuya Yamagishi
-        * Added: new
+        * added: new
 """
 
-VERSION = 'v0.0.1'
+VERSION = 'v0.0.2'
 NAME = 'mdk_nuke'
 
 import os
@@ -72,24 +75,6 @@ def get_ext() -> str:
     """
     return '.nk'
 
-# def get_main_window():
-#     """ Get the Nuke main window.
-
-#     Reference from:
-#         * https://russell-vfx.com/blog/2020/8/20/main-window
-#         * https://gist.github.com/paulwinex/b00fcff40ee8392d3220990b358d9337
-
-#     Returns:
-#         PySide2.QtWidgets.QWidget: 'QWidget' Nuke main window.
-#     """
-#     for _widget in QtWidgets.QApplication.topLevelWidgets():
-#         if _widget.metaObject().className() == 'Foundry::UI::DockMainWindow':
-#             return _widget
-        
-#         raise RuntimeError('Could not find DockMainWindow instance')
-
-#     # return QtWidgets.QApplication.activeWindow()
-
 def get_fps() -> float:
     """ FPSを取得
     
@@ -101,6 +86,16 @@ def get_fps() -> float:
 def get_filepath() -> str:
     """現在開いているファイルパスを取得"""
     return nuke.root().name()
+
+def get_frame_range() -> tuple[int, int]:
+    """ フレームレンジを取得
+    
+    Returns:
+        tuple[int, int]: フレームレンジ (start, end)
+    """
+    first = int(nuke.root()['first_frame'].value())
+    last = int(nuke.root()['last_frame'].value())
+    return (first, last)
 
 
 def get_main_window():
