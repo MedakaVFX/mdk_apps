@@ -413,7 +413,7 @@ def create_playblast(
             filepath: str,
             size: list|tuple=None,
             range: list|tuple=None,
-            filetype='jpg'
+            filetype='.jpg'
 ):
     """ プレイブラストを作成
     
@@ -424,8 +424,8 @@ def create_playblast(
     """
 
     _FILE_FORMATS = {
-        'jpg': 8,
-        'png': 32,
+        '.jpg': 8,
+        '.png': 32,
     }
     
     _startframe, _endframe = range
@@ -761,53 +761,6 @@ class AppMain:
         cmds.AbcImport(filepath, mode="import", connect=_selection[0])
         # cmds.AbcImport(filepath, mode="import", rpr=_selection[0], merge=True)
 
-
-
-                    
-    def create_playblast(
-                self,
-                filepath: str,
-                name: str,
-                size: list|tuple=None,
-                framerange: list|tuple=None,
-                ext: str = 'jpg',):
-        
-        """
-        * defaultRenderGlobals.imageFormat
-        
-        """
-
-        _file_format_dict = {
-            'jpg': 8,
-            'png': 32,
-        }
-        
-        print('# --------------------------------- #')
-        print('# Create Playblast')
-        print('# --------------------------------- #')
-
-        print(f'Name: {name}')
-        print(f'Size: {size}')
-        print(f'Ext: {ext}')
-        print(f'Range: {framerange}')
-        print(f'Filepath: {filepath}')
-
-        
-        cmds.setAttr(
-                'defaultRenderGlobals.imageFormat',
-                _file_format_dict[ext]
-        )
-
-        cmds.playblast( 
-            f = f'{filepath}/{name}',
-            v = False, 
-            percent = 100,
-            format = 'image',
-            widthHeight = size,
-            startTime = framerange[0],
-            endTime = framerange[1],
-            forceOverwrite = True,
-        )
 
 
     # def export_abc(
