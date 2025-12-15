@@ -96,7 +96,15 @@ def get_ext_list():
     """ 拡張子リストを返す"""
     return list(EXT_LIST)
 
+def get_fps() -> float:
+    """ FPSを取得
+    * Plugin Builtin Function
 
+    Returns:
+        float: フレームレート
+    """
+    return hou.fps()
+    
 def get_filepath() -> str:
     """ Plugin Builtin Function """
     return hou.hipFile.path()
@@ -322,10 +330,7 @@ class AppMain:
         return hou.hipFile.path()
     
 
-    def get_fps(self) -> float:
-        """ Plugin Builtin Function """
-        return hou.fps()
-        
+
 
 
     def get_framerange(self) -> tuple[int]:

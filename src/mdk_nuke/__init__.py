@@ -8,7 +8,7 @@ Info:
     * Author : MedakaVFX <medaka.vfx@gmail.com>
  
 Release Note:
-    * v0.0.1 [v0.1.0] 2025-12-01 Tatsuya Yamagishi
+    * v0.0.1 [v0.1.0] 2025-12-14 Tatsuya Yamagishi
         * Added: new
 """
 
@@ -89,6 +89,14 @@ def get_ext() -> str:
 #         raise RuntimeError('Could not find DockMainWindow instance')
 
 #     # return QtWidgets.QApplication.activeWindow()
+
+def get_fps() -> float:
+    """ FPSを取得
+    
+    Returns:
+        float: フレームレート
+    """
+    return nuke.root()['fps'].value()
 
 def get_filepath() -> str:
     """現在開いているファイルパスを取得"""

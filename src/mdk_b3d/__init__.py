@@ -85,6 +85,10 @@ def get_ext_list() -> list[str]:
     """ 拡張子リストを返す"""
     return list(EXT_LIST)
 
+def get_filepath() -> str:
+    """現在開いているファイルパスを取得"""
+    return bpy.context.blend_data.filepath
+
 def get_selected_nodes() -> list:
     """ 選択しているノードを取得
    
