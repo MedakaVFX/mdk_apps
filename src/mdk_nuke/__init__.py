@@ -84,8 +84,16 @@ def get_fps() -> float:
     return nuke.root()['fps'].value()
 
 def get_filepath() -> str:
-    """現在開いているファイルパスを取得"""
-    return nuke.root().name()
+    """ 現在開いているファイルパスを取得 
+    
+    
+    """
+    _result = nuke.root().name()
+    
+    if _result == 'Root':
+        _result = ''
+
+    return _result
 
 def get_frame_range() -> tuple[int, int]:
     """ フレームレンジを取得
@@ -157,7 +165,12 @@ def set_frame_range(first: int, last: int):
 # ======================================= #
 # Functins
 # ======================================= #
-def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=None, filetype='jpg'):
+def create_playblast(
+        filepath: str,
+        size: list|tuple=None,
+        framerange: list|tuple=None,
+        filetype='.jpg'):
+    
     """ プレイブラストを作成
     
     Args:
