@@ -185,16 +185,27 @@ def set_unit(unit: str):
 # ======================================= #
 # Functins
 # ======================================= #
-def create_playblast(filepath: str, size: list|tuple=None, range: list|tuple=None, filetype='jpg'):
-    """ プレイブラストを作成
-    
-    Args:
-        filepath(str): 出力ファイルパス
-        size(list | turple): サイズ
-        range(list | turple): サイズ
-    """
+def create_playblast(
+        filepath: str,
+        size: tuple[int]|list[int],
+        framerange: tuple[int],
+    ):
 
-    raise RuntimeError('未実装')
+
+    _cur_desktop = hou.ui.curDesktop()
+    _scene = _cur_desktop.paneTabOfType(hou.paneTabType.SceneViewer)
+    if not _scene:
+        return
+
+    if not _scene.isCurrentTab():
+        _scene.setIsCurrentTab()
+
+    _flip_options = _scene.flipbookSettings().stash()
+    _flip_options.resolution(size) 
+    _flip_options.outputToMPlay(False)
+    _flip_options.frameRange(framerange)
+    _flip_options.output(filepath)
+    _scene.flipbook(_scene.curViewport(), _flip_options)
 
 
 def open_dir(filepath):
@@ -279,29 +290,6 @@ class AppMain:
         self._unit_scale = 0.01
     
 
-    def create_playblast(
-            self,
-            filepath,
-            size: tuple[int]|list[int],
-            framerange: tuple[int],
-        ):
-
-
-        _cur_desktop = hou.ui.curDesktop()
-        _scene = _cur_desktop.paneTabOfType(hou.paneTabType.SceneViewer)
-        if not _scene:
-            return
-
-        if not _scene.isCurrentTab():
-            _scene.setIsCurrentTab()
-
-
-        _flip_options = _scene.flipbookSettings().stash()
-        _flip_options.resolution(size) 
-        _flip_options.outputToMPlay(False)
-        _flip_options.frameRange(framerange)
-        _flip_options.output(filepath)
-        _scene.flipbook(_scene.curViewport(), _flip_options)
 
 
 

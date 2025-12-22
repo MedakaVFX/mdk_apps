@@ -412,7 +412,7 @@ def clear_plugins():
 def create_playblast(
             filepath: str,
             size: list|tuple=None,
-            range: list|tuple=None,
+            framerange: list|tuple=None,
             filetype='.jpg'
 ):
     """ プレイブラストを作成
@@ -428,10 +428,7 @@ def create_playblast(
         '.png': 32,
     }
     
-    _startframe, _endframe = range
     cmds.setAttr ('defaultRenderGlobals.imageFormat', _FILE_FORMATS[filetype])
-
-    
 
     cmds.playblast( 
             f=filepath,
@@ -439,8 +436,8 @@ def create_playblast(
             percent=100,
             format='image',
             widthHeight=size,
-            startTime=_startframe,
-            endTime=_endframe,
+            startTime=framerange[0],
+            endTime=framerange[1],
             forceOverwrite=False
         )
     

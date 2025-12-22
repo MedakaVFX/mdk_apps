@@ -32,6 +32,11 @@ import subprocess
 import sys
 
 
+try:
+    from PySide6 import QtCore, QtGui, QtWidgets
+except:
+    from qtpy import QtCore, QtGui, QtWidgets
+
 if os.environ.get('MDK_DEBUG'):
     print('MDK | ---------------------------')
     print('MDK | [ import mdk_standalone package]')
@@ -148,6 +153,54 @@ def set_unit(value: str):
 # ======================================= #
 # Functions
 # ======================================= #
+def capture_screen(filepath: str, size: tuple=None, filetype: str='.jpg'):
+    """
+    Docstring for capture_screen
+    
+    Args:
+        filepath (str): 保存先ファイルパス
+        size (tuple, optional): 画像サイズ (width, height). Defaults to None.
+        filetype (str, optional): ファイルタイプ. Defaults to '.jpg'.
+    """
+
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+
+    # メインスクリーン取得
+    screen: QtGui.QScreen = app.primaryScreen()
+    if screen is None:
+        raise RuntimeError("スクリーンが取得できません")
+
+    # ① 画面キャプチャ（フルスクリーン）
+    pixmap = screen.grabWindow(0)
+
+    # ② 指定解像度にリサイズ
+    resized = pixmap.scaled(
+        size[0], size[1],   # width,
+        QtCore.Qt.IgnoreAspectRatio,   # 完全に指定解像度
+        QtCore.Qt.SmoothTransformation
+    )
+
+    # ③ ファイル保存
+    pathlib.Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+    resized.save(filepath, filetype.replace('.', '').upper())
+
+
+def create_playblast(
+            dirpath: str,
+            name: str,
+            size: list|tuple=None,
+            framerange: list|tuple=None,
+            filetype: str='.jpg'
+):
+    
+    for _frame in range(framerange[0], framerange[1]+1):
+        _filename = f'{dirpath}/{name}/{name}.{_frame:04d}{filetype}'
+        print(f'  - Frame {_frame}: {_filename}')
+        capture_screen(_filename, size=size, filetype=filetype)
+
+
 def save_file(filepath: str, value: str) -> None:
     """ ファイルを保存 """
     with open(filepath, 'w') as f:
